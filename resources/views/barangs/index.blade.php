@@ -1,0 +1,54 @@
+@extends('layouts.admin')
+
+@section('content')
+<h3>Data Barang</h3>
+<div class="card">
+    <div class="card-header">
+        <a href="{{ route('barangs.create') }}" class="btn btn-primary btn-sm">
+            + Barang
+        </a>
+    </div>
+
+    <div class="card-body">
+        <table class="table table-bordered table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Kode Barang</th>
+                    <th>Nama Barang</th>
+                    <th>Supplier</th>
+                    <th>Stok</th>
+                    <th width="120">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($barangs as $b)
+                <tr>
+                    <td>{{ $b->kode_barang }}</td>
+                    <td>{{ $b->nama_barang }}</td>
+                    <td>{{ $b->supplier->nama_supplier ?? '-' }}</td>
+                    <td>{{ $b->stok }} roll</td>
+                    <td>
+                        <a href="{{ route('barangs.edit',$b->id) }}"
+                           class="btn btn-warning btn-sm">Edit</a>
+
+                        <form action="{{ route('barangs.destroy',$b->id) }}"
+                              method="POST"
+                              style="display:inline">
+                            @csrf
+                            @method('DELETE')
+                            <button class="btn btn-danger btn-sm"
+                                onclick="return confirm('Hapus barang?')">
+                                Hapus
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endsection
+
+
+
