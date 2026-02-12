@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\DeliveryNoteController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrdersController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +46,13 @@ Route::resource('banks', BankController::class);
 
 Route::resource('incoming-barangs', IncomingBarangController::class);
 Route::resource('mutasi-barangs', MutasiBarangController::class);
+Route::resource('orders', OrdersController::class);
+Route::resource('delivery-notes', DeliveryNoteController::class);
+Route::resource('invoices', InvoiceController::class);
+Route::resource('payments', PaymentController::class)->only(['index','store','show','destroy']);
+
+
+
 
 Route::prefix('kas')->group(function () {
     Route::get('/', [KasController::class, 'index'])->name('kas.index');
