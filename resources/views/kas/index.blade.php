@@ -2,14 +2,15 @@
 
 @section('content')
 <div class="container">
-    <h4>Petty Cash & Pengeluaran Kantor</h4>
-
-    <a href="{{ route('kas.create') }}" class="btn btn-primary mb-3">
-        + Tambah Transaksi
-    </a>
+    <div class="d-flex justify-content-between">
+        <h4>Petty Cash & Pengeluaran Kantor</h4>
+        <a href="{{ route('kas.create') }}" class="btn btn-primary mb-3">
+            + Tambah Transaksi
+        </a>
+    </div>
 
     <table class="table table-bordered">
-        <thead>
+        <thead class="thead-dark">
             <tr>
                 <th>Tanggal</th>
                 <th>No Transaksi</th>

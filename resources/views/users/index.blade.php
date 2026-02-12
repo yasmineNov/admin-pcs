@@ -3,12 +3,14 @@
 @section('title', 'Data Users')
 
 @section('content')
-<div class="container">
-    <h1 class="mb-4">Data Users</h1>
-
-    <!-- Tombol tambah user -->
-    <a href="{{ route('users.create') }}" class="btn btn-primary mb-3">Tambah User</a>
-
+    <div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between">
+            <h2>Master Users</h2>
+            <a href="{{ route('users.create') }}" class="btn btn-primary mb-2"> + Tambah User</a>
+        </div>
+    </div>
+    <div class="card-body">
     <table class="table table-bordered table-striped">
         <thead class="thead-dark">
             <tr>
@@ -42,5 +44,6 @@
             @endforelse
         </tbody>
     </table>
+    </div>
 </div>
 @endsection

@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Payment;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+
 
 class PaymentController extends Controller
 {

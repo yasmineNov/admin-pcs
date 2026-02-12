@@ -3,8 +3,8 @@
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h5>Incoming Barang</h5>
-        <a href="{{ route('incoming-barangs.create') }}" class="btn btn-primary btn-sm float-right">Tambah</a>
+        <h2>Incoming Barang</h2>
+        {{-- <a href="{{ route('incoming-barangs.create') }}" class="btn btn-primary mb-3">+ Input Surat Jalan</a> --}}
     </div>
 
     <div class="card-body">

@@ -1,12 +1,14 @@
 @extends('layouts.admin')
 
 @section('content')
+
 <div class="card">
     <div class="card-header">
-        <h5>Master Supplier</h5>
-        <a href="{{ route('suppliers.create') }}" class="btn btn-primary btn-sm">
-            + Supplier
-        </a>
+        <div class="d-flex justify-content-between">
+            <h2>Master Supplier</h2>
+            <a href="{{ route('suppliers.create') }}" class="btn btn-primary mb-2">
+                + Tambah Supplier</a>
+        </div>    
     </div>
 
     <div class="card-body">

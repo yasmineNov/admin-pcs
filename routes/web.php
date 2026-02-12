@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\DeliveryNoteController;
 use App\Http\Controllers\InvoiceController;
-use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
@@ -51,13 +50,19 @@ Route::resource('delivery-notes', DeliveryNoteController::class);
 Route::resource('invoices', InvoiceController::class);
 Route::resource('payments', PaymentController::class)->only(['index','store','show','destroy']);
 
-
-
-
 Route::prefix('kas')->group(function () {
     Route::get('/', [KasController::class, 'index'])->name('kas.index');
     Route::get('/create', [KasController::class, 'create'])->name('kas.create');
     Route::post('/store', [KasController::class, 'store'])->name('kas.store');
+});
+
+Route::prefix('penjualan')->group(function () {
+    Route::resource('surat-jalan', DeliveryNoteController::class);
+    Route::get('surat-jalan/{id}/detail', [DeliveryNoteController::class, 'detail']);
+});
+
+Route::prefix('penjualan')->group(function () {
+    Route::resource('faktur', InvoiceController::class);
 });
 
 

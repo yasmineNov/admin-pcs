@@ -2,7 +2,11 @@
 
 @section('content')
 <div class="container">
-    <h1 class="mb-4">Kartu Stok Barang</h1>
+    <div class="card">
+        <div class="card-header d-flex justify-content-between">
+            <h2 class="mb-2">Kartu Stok Barang</h2>
+        </div>
+        <div class="card-body">
 
     {{-- Filter Barang --}}
     <form method="GET" class="mb-4">
@@ -81,5 +85,6 @@
             Silakan pilih barang untuk melihat kartu stok
         </div>
     @endif
+</div>
 </div>
 @endsection

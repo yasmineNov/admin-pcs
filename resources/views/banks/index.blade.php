@@ -1,12 +1,13 @@
 @extends('layouts.admin')
 
 @section('content')
-{{-- <div class="card"> --}}
-    {{-- <div class="card-header d-flex justify-content-between"> --}}
-        <h5>Master Bank</h5>
-        <a href="{{ route('banks.create') }}" class="btn btn-primary btn-sm">Tambah</a>
-    {{-- </div> --}}
-
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between">
+            <h2>Master Bank</h2>
+            <a href="{{ route('banks.create') }}" class="btn btn-primary mb-2">+ Tambah Bank</a>
+        </div>
+    </div>
     <div class="card-body">
         <table class="table table-bordered">
             <thead class="thead-dark">
@@ -39,5 +40,5 @@
             </tbody>
         </table>
     </div>
-{{-- </div> --}}
+</div>
 @endsection

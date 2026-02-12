@@ -3,83 +3,106 @@
 namespace App\Http\Controllers;
 
 use App\Models\DeliveryNote;
+use App\Models\DeliveryNoteDetail;
+use App\Models\MutasiBarang;
+use App\Models\Orders;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\Barang;
-use App\Models\MutasiBarang;
-
 
 class DeliveryNoteController extends Controller
 {
     public function index()
     {
-        return DeliveryNote::with('order')
-            ->latest()
-            ->get();
+        $data = DeliveryNote::with('customer')->orderBy('tgl_sj', 'desc')->get();
+        return view('penjualan.surat-jalan.index', compact('data'));
     }
+
+    public function create()
+{
+    $customers = \App\Models\Customer::all();
+    $barangs = \App\Models\Barang::all();
+    $orders = \App\Models\Orders::with('customer','details.barang')
+                ->where('status','approved') // optional
+                ->get();
+    return view('penjualan.surat-jalan.create', compact('customers', 'orders','barangs'));
+}
 
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'no' => 'required|unique:delivery_notes',
-            'tgl' => 'required|date',
-            'order_id' => 'required|exists:orders,id',
-            'details' => 'required|array'
+{
+    $request->validate([
+        'order_id' => 'required|exists:orders,id',
+        'tgl_sj' => 'required'
+    ]);
+
+    DB::transaction(function () use ($request) {
+
+        $order = Orders::with('details.barang')
+                    ->findOrFail($request->order_id);
+
+        $deliveryNote = DeliveryNote::create([
+            'no' => 'SJ-' . time(),
+            'tgl' => $request->tgl_sj,
+            'keterangan' => null,
+            'alamat_kirim' => null,
+            'order_id' => $order->id, // WAJIB ADA
         ]);
 
-        DB::transaction(function () use ($request) {
+        foreach ($request->qty as $detailId => $qtyKirim) {
 
-            $dn = DeliveryNote::create(
-                $request->only(['no', 'tgl', 'keterangan', 'alamat_kirim', 'order_id'])
-            );
+            if ($qtyKirim <= 0) continue;
 
-            foreach ($request->details as $detail) {
+            $orderDetail = $order->details->where('id', $detailId)->first();
 
-                // ambil order detail + barang
-                $orderDetail = \App\Models\OrderDetail::with('barang')
-                    ->findOrFail($detail['order_detail_id']);
+            if (!$orderDetail) continue;
 
-                $barang = $orderDetail->barang;
-
-                $qtyKirim = $orderDetail->qty;
-                // nanti bisa dikembangkan partial kirim pakai qty_sent
-
-                // VALIDASI stok cukup
-                if ($barang->stok < $qtyKirim) {
-                    throw new \Exception("Stok tidak cukup untuk barang {$barang->nama}");
-                }
-
-                // buat delivery note detail
-                $dnd = $dn->details()->create([
-                    'order_detail_id' => $orderDetail->id,
-                    'keterangan' => $detail['keterangan'] ?? null,
-                ]);
-
-                // kurangi stok barang
-                $barang->decrement('stok', $qtyKirim);
-
-                // catat mutasi barang
-                MutasiBarang::create([
-                    'barang_id' => $barang->id,
-                    'qty' => -$qtyKirim,
-                    'delivery_note_detail_id' => $dnd->id,
-                    'keterangan' => 'Delivery Note: ' . $dn->no,
-                ]);
+            if ($qtyKirim > $orderDetail->qty) {
+                throw new \Exception("Qty kirim melebihi qty order!");
             }
-        });
 
-        return response()->json(['message' => 'Delivery Note created & stok updated']);
-    }
+            $barang = $orderDetail->barang;
 
+            if ($barang->stok < $qtyKirim) {
+                throw new \Exception("Stok {$barang->nama_barang} tidak cukup!");
+            }
 
-    public function show(DeliveryNote $deliveryNote)
+            DeliveryNoteDetail::create([
+                'delivery_note_id' => $deliveryNote->id,
+                'order_detail_id' => $orderDetail->id,
+                'keterangan' => null,
+            ]);
+
+            MutasiBarang::create([
+                'tgl_mutasi' => now(),
+                'barang_id' => $barang->id,
+                'qty' => $qtyKirim,
+                'tipe' => 'OUT',
+                'keterangan' => 'Surat Jalan ' . $deliveryNote->no,
+            ]);
+
+            $barang->decrement('stok', $qtyKirim);
+        }
+
+    });
+
+    return redirect()->route('surat-jalan.index')
+        ->with('success','Surat Jalan berhasil dibuat');
+
+}
+
+    public function detail($id)
     {
-        return $deliveryNote->load('details.orderDetail.barang');
-    }
+        $sj = DeliveryNote::with('details.orderDetail.barang', 'order.customer')
+                ->findOrFail($id);
 
-    public function destroy(DeliveryNote $deliveryNote)
-    {
-        $deliveryNote->delete();
-        return response()->json(['message' => 'Deleted']);
+        return response()->json([
+            'no_sj' => $sj->no,
+            'customer' => $sj->order->customer,
+            'details' => $sj->details->map(function ($d) {
+                return [
+                    'barang' => $d->orderDetail->barang,
+                    'qty' => $d->orderDetail->qty
+                ];
+            })
+        ]);
     }
 }

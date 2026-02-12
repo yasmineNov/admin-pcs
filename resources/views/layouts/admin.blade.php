@@ -130,68 +130,106 @@
                     </ul>
                 </li>
 
-                <!-- Penjualan -->
-                {{-- <li class="nav-item {{ request()->is('surat-jalans*') || request()->is('fakturs*') || request()->is('penjualans*') || request()->is('pembayarans*') ? 'menu-open' : '' }}">
-                    <a href="#" class="nav-link {{ request()->is('surat-jalans*') || request()->is('fakturs*') || request()->is('penjualans*') || request()->is('pembayarans*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-truck"></i>
-                        <p>
-                            Penjualan
-                            <i class="right fas fa-angle-left"></i>
-                        </p>
+                {{-- Register Surat Jalan --}}
+                 {{-- <li class="nav-item {{ request()->is('penjualan/surat-jalan*') ? 'menu-open' : '' }}">
+                    <a href="{{ route('surat-jalan.index') }}" 
+                        class="nav-link {{ request()->is('penjualan/surat-jalan*') ? 'active' : '' }}">
+                        <p>Register Surat Jalan</p>
                     </a>
+                </li>
+                <li class="nav-item {{ request()->is('penjualan/faktur*') ? 'menu-open' : '' }}">
+                    <a href="{{ route('faktur.index') }}" 
+                        class="nav-link {{ request()->is('penjualan/faktur*') ? 'active' : '' }}">
+                        <p>Faktur Penjualan</p>
+                    </a>
+                </li> --}}
+
+                <!-- Penjualan -->
+                <li class="nav-item has-treeview {{ request()->is('penjualan*') ? 'menu-open' : '' }}">
+                    <a href="#" class="nav-link {{ request()->is('penjualan*') ? 'active' : '' }}">
+                    <p> Penjualan <i class="right fas fa-angle-left"></i> </p>
+                    </a>
+
                     <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="{{ route('surat-jalans.index') }}" class="nav-link {{ request()->is('surat-jalans*') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Surat Jalan</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('fakturs.index') }}" class="nav-link {{ request()->is('fakturs*') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Faktur</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('penjualans.index') }}" class="nav-link {{ request()->is('penjualans*') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
+                            <li class="nav-item"> 
+                                <a href="{{ route('surat-jalan.index') }}" class="nav-link {{ request()->is('penjualan/surat-jalan*') ? 'active' : '' }}"> 
+                                    <i class="far fa-circle nav-icon"></i> 
+                                    <p>Surat Jalan Penjualan</p> 
+                                </a> 
+                            </li> 
+                            <li class="nav-item"> 
+                                <a href="{{ route('faktur.index') }}" class="nav-link {{ request()->is('penjualan/faktur*') ? 'active' : '' }}"> 
+                                    <i class="far fa-circle nav-icon"></i> 
+                                    <p>Faktur Penjualan</p> 
+                                </a> 
+                            </li> 
+                        {{-- <li class="nav-item">
+                            <a href="{{ route('penjualan.index') }}"
+                                class="nav-link {{ request()->is('penjualan/data-penjualan*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-cash-register"></i>
                                 <p>Data Penjualan</p>
                             </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('pembayarans.index') }}" class="nav-link {{ request()->is('pembayarans*') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Pelunasan Faktur</p>
+                        </li> --}}
+
+                        {{-- <li class="nav-item">
+                            <a href="{{ route('piutang.index') }}"
+                                class="nav-link {{ request()->is('penjualan/piutang*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-hand-holding-usd"></i>
+                                <p>Piutang Customer</p>
                             </a>
-                        </li>
+                        </li> --}}
+
                     </ul>
                 </li>
-
+                
                 <!-- Pembelian -->
-                <li class="nav-item {{ request()->is('po-suppliers*') ? 'menu-open' : '' }}">
-                    <a href="#" class="nav-link {{ request()->is('po-suppliers*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-file-invoice"></i>
-                        <p>
-                            Pembelian
-                            <i class="right fas fa-angle-left"></i>
-                        </p>
+                {{-- <li class="nav-item has-treeview {{ request()->is('pembelian*') ? 'menu-open' : '' }}">
+                    <a href="#" class="nav-link {{ request()->is('pembelian*') ? 'active' : '' }}">
+                    <p> Pembelian <i class="right fas fa-angle-left"></i> </p>
                     </a>
+
                     <ul class="nav nav-treeview">
+                        <li class="nav-item"> 
+                                <a href="{{ route('surat-jalan.index') }}" class="nav-link {{ request()->is('pembelian/surat-jalan*') ? 'active' : '' }}"> 
+                                    <i class="far fa-circle nav-icon"></i> 
+                                    <p>Surat Jalan Pembelian</p> 
+                                </a> 
+                            </li> 
+                            <li class="nav-item"> 
+                                <a href="{{ route('faktur.index') }}" class="nav-link {{ request()->is('pembelian/faktur*') ? 'active' : '' }}"> 
+                                    <i class="far fa-circle nav-icon"></i> 
+                                    <p>Faktur Pembelian</p> 
+                                </a> 
+                            </li> 
+
                         <li class="nav-item">
-                            <a href="{{ route('po-suppliers.index') }}" class="nav-link {{ request()->is('po-suppliers*') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>PO Supplier</p>
+                            <a href="{{ route('pembelian.index') }}"
+                                class="nav-link {{ request()->is('pembelian/data-pembelian*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-shopping-cart"></i>
+                                <p>Data Pembelian</p>
                             </a>
                         </li>
+
+                        <li class="nav-item">
+                            <a href="{{ route('piutang.index') }}"
+                                class="nav-link {{ request()->is('pembelian/piutang*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-credit-card"></i>
+                                <p>Hutang Supplier</p>
+                            </a>
+                        </li>
+
                     </ul>
                 </li> --}}
 
                 <!-- Kas -->
                 <li class="nav-item {{ request()->is('kas*') ? 'menu-open' : '' }}">
                     <a href="{{ route('kas.index') }}" class="nav-link {{ request()->is('kas*') ? 'active' : '' }}">
-                    {{-- <a href="#" class="nav-link {{ request()->is('kas*') ? 'active' : '' }}"> --}}
-                        {{-- <i class="nav-icon fas fa-money-bill-wave"></i> --}}
                         <p>Kas</p>
+                    </a>
+                </li>
+                <li class="nav-item {{ request()->is('absensi*') ? 'menu-open' : '' }}">
+                    <a href="{{ route('kas.index') }}" class="nav-link {{ request()->is('kas*') ? 'active' : '' }}">
+                        <p>Absensi Karyawan</p>
                     </a>
                 </li>
 
