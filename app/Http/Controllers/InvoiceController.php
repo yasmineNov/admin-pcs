@@ -9,9 +9,16 @@ class InvoiceController extends Controller
 {
     public function index()
     {
-        return Invoice::with(['customer', 'supplier'])
+        return Invoice::with(['customer','supplier'])
             ->latest()
             ->get();
+
+        return view('penjualan.faktur.index', compact('faktur'));
+    }
+
+    public function create()
+    {
+        return view('faktur.create');
     }
 
     public function store(Request $request)
@@ -20,25 +27,45 @@ class InvoiceController extends Controller
             'no' => 'required|unique:invoices',
             'type' => 'required|in:in,out',
             'tgl' => 'required|date',
-            'grand_total' => 'required|numeric',
-            'delivery_note_id' => 'nullable|exists:delivery_notes,id'
+            'grand_total' => 'required|numeric'
         ]);
-
 
         $invoice = Invoice::create($request->all());
 
-        return response()->json($invoice);
+        return redirect()->route('penjualan.faktur.index')
+            ->with('success', 'Faktur berhasil dibuat');
     }
 
-    public function show(Invoice $invoice)
+    public function edit($id)
     {
-        return $invoice->load('payments.payment');
+        $faktur = Invoice::findOrFail($id);
+        return view('penjualan.faktur.edit', compact('faktur'));
     }
 
-    public function destroy(Invoice $invoice)
+    public function update(Request $request, $id)
     {
-        $invoice->delete();
-        return response()->json(['message' => 'Deleted']);
+        $faktur = Invoice::findOrFail($id);
+
+        $faktur->update([
+            'no' => $request->no_faktur,
+            'no_so' => $request->no_po,
+            'tgl' => $request->tgl_faktur,
+            'dpp' => $request->dpp,
+            'ppn' => $request->ppn,
+            'grand_total' => $request->grand_total,
+            'jatuh_tempo' => $request->jatuh_tempo,
+            'customer_id' => $request->customer_id,
+        ]);
+
+        return redirect()->route('penjualan.faktur.index')
+            ->with('success', 'Faktur berhasil diupdate');
+    }
+
+    public function destroy($id)
+    {
+        Invoice::findOrFail($id)->delete();
+
+        return redirect()->route('penjualan.faktur.index')
+            ->with('success', 'Faktur berhasil dihapus');
     }
 }
-
