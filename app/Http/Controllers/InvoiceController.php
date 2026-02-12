@@ -9,7 +9,7 @@ class InvoiceController extends Controller
 {
     public function index()
     {
-        return Invoice::with(['customer','supplier'])
+        return Invoice::with(['customer', 'supplier'])
             ->latest()
             ->get();
     }
@@ -20,8 +20,10 @@ class InvoiceController extends Controller
             'no' => 'required|unique:invoices',
             'type' => 'required|in:in,out',
             'tgl' => 'required|date',
-            'grand_total' => 'required|numeric'
+            'grand_total' => 'required|numeric',
+            'delivery_note_id' => 'nullable|exists:delivery_notes,id'
         ]);
+
 
         $invoice = Invoice::create($request->all());
 

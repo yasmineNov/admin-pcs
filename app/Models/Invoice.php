@@ -19,6 +19,7 @@ class Invoice extends Model
         'type',
         'customer_id',
         'supplier_id',
+        'delivery_note_id',
     ];
 
     public function payments()
@@ -35,5 +36,10 @@ class Invoice extends Model
     {
         return $this->belongsTo(Supplier::class);
     }
+    public function deliveryNote()
+    {
+        return $this->belongsTo(DeliveryNote::class);
+    }
+
 }
 

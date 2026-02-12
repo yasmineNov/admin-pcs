@@ -23,4 +23,10 @@ class DeliveryNote extends Model
     {
         return $this->hasMany(DeliveryNoteDetail::class);
     }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
 }
