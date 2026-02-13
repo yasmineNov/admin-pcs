@@ -7,30 +7,66 @@
     </div>
 
     <div class="card-body">
+
+        {{-- ERROR VALIDATION --}}
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form action="{{ route('surat-jalan.store') }}" method="POST">
             @csrf
 
+            {{-- TANGGAL & CUSTOMER --}}
             <div class="row mb-3">
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label>Tanggal Surat Jalan</label>
-                    <input type="date" name="tgl_sj" class="form-control" required>
+                    <input type="date"
+                           name="tgl"
+                           class="form-control"
+                           value="{{ old('tgl', date('Y-m-d')) }}"
+                           required>
                 </div>
 
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <label>Customer</label>
-                    <select name="customer_id" class="form-control" required>
-                        <option value="">-- pilih customer --</option>
-                        @foreach($customers as $c)
-                            <option value="{{ $c->id }}">
-                                {{ $c->nama_customer }}
+                    <select name="customer_id"
+                            id="customerSelect"
+                            class="form-control"
+                            required>
+                        <option value="">-- Pilih Customer --</option>
+                        @foreach($customers as $customer)
+                            <option value="{{ $customer->id }}"
+                                    data-alamat="{{ $customer->alamat }}">
+                                {{ $customer->nama_customer }}
                             </option>
                         @endforeach
                     </select>
                 </div>
 
                 <div class="col-md-4">
+                    <label>Alamat Kirim</label>
+                    <input type="text"
+                           name="alamat_kirim"
+                           id="alamatKirim"
+                           class="form-control"
+                           readonly>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4">
                     <label>No. PO</label>
-                    <input type="text" name="po" class="form-control" required>
+                    <input type="text"
+                           name="po"
+                           class="form-control"
+                           value="{{ old('po') }}"
+                           required>
                 </div>
             </div>
 
@@ -43,18 +79,22 @@
                     <thead class="table-light">
                         <tr>
                             <th>Nama Barang</th>
-                            <th width="120">Qty</th>
+                            <th width="150">Qty Kirim</th>
                             <th width="60"></th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td>
-                                <select name="barang_id[]" class="form-control" required>
+                                <select name="barang_id[]"
+                                        class="form-control"
+                                        required>
                                     <option value="">-- Pilih Barang --</option>
                                     @foreach ($barangs as $b)
                                         <option value="{{ $b->id }}">
-                                            {{ $b->kode_barang }} - {{ $b->nama_barang }} (Stok: {{ $b->stok }})
+                                            {{ $b->kode_barang }} -
+                                            {{ $b->nama_barang }}
+                                            (Stok: {{ $b->stok }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -77,7 +117,9 @@
                 </table>
             </div>
 
-            <button type="button" id="add-row" class="btn btn-secondary btn-sm">
+            <button type="button"
+                    id="add-row"
+                    class="btn btn-secondary btn-sm mt-2">
                 + Tambah Barang
             </button>
 
@@ -86,10 +128,12 @@
             <button type="submit" class="btn btn-primary">
                 Simpan Surat Jalan
             </button>
+
         </form>
     </div>
 </div>
 
+{{-- SCRIPT --}}
 <script>
 document.getElementById('add-row').addEventListener('click', function () {
     let tableBody = document.querySelector('#table-barang tbody');
@@ -109,6 +153,15 @@ document.addEventListener('click', function (e) {
             e.target.closest('tr').remove();
         }
     }
+});
+
+document.getElementById('customerSelect')
+    .addEventListener('change', function() {
+
+    let selected = this.options[this.selectedIndex];
+    let alamat = selected.getAttribute('data-alamat');
+
+    document.getElementById('alamatKirim').value = alamat ?? '';
 });
 </script>
 

@@ -3,8 +3,10 @@
 @section('content')
 <div class="card">
     <div class="card-header">
+        <div class="d-flex justify-content-between">
         <h2>Incoming Barang</h2>
-        {{-- <a href="{{ route('incoming-barangs.create') }}" class="btn btn-primary mb-3">+ Input Surat Jalan</a> --}}
+        <a href="{{ route('incoming-barangs.create') }}" class="btn btn-primary mb-3">+ Input Surat Jalan</a>
+        </div>
     </div>
 
     <div class="card-body">

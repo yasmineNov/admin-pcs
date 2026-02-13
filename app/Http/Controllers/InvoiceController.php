@@ -9,7 +9,8 @@ class InvoiceController extends Controller
 {
     public function index()
     {
-        return Invoice::with(['customer','supplier'])
+        $faktur = Invoice::with('customer')
+            ->where('type', 'penjualan')
             ->latest()
             ->get();
 
@@ -18,19 +19,24 @@ class InvoiceController extends Controller
 
     public function create()
     {
-        return view('faktur.create');
+        return view('penjualan.faktur.create');
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'no' => 'required|unique:invoices',
-            'type' => 'required|in:in,out',
-            'tgl' => 'required|date',
-            'grand_total' => 'required|numeric'
+        Invoice::create([
+            'no' => $request->no_faktur,
+            'no_so' => $request->no_po,
+            'tgl' => $request->tgl_faktur,
+            'dpp' => $request->dpp,
+            'ppn' => $request->ppn,
+            'grand_total' => $request->grand_total,
+            'jatuh_tempo' => $request->jatuh_tempo,
+            'status' => 'unpaid',
+            'paid' => 0,
+            'type' => 'penjualan',
+            'customer_id' => $request->customer_id,
         ]);
-
-        $invoice = Invoice::create($request->all());
 
         return redirect()->route('penjualan.faktur.index')
             ->with('success', 'Faktur berhasil dibuat');
