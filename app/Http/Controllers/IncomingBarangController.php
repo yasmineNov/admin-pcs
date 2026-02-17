@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\IncomingBarang;
 use App\Models\Barang;
+use App\Models\Orders;
 use App\Models\Supplier;
 use App\Models\MutasiBarang;
 use Illuminate\Http\Request;
@@ -38,20 +39,32 @@ class IncomingBarangController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+public function store(Request $request)
 {
     $request->validate([
         'tgl_masuk'   => 'required|date',
         'barang_id'   => 'required|exists:barangs,id',
         'qty'         => 'required|integer|min:1',
         'harga'       => 'required|numeric',
-        'supplier_id' => 'required|exists:suppliers,id'
+        'supplier_id' => 'required|exists:suppliers,id',
+        'no_sj'       => 'nullable|string',
+        'no_invoice'  => 'nullable|string',
+        'order_id'    => 'nullable|exists:orders,id'
     ]);
 
     DB::transaction(function () use ($request) {
 
         // 1️⃣ Simpan incoming barang
-        IncomingBarang::create($request->all());
+        $incoming = IncomingBarang::create([
+            'tgl_masuk'   => $request->tgl_masuk,
+            'barang_id'   => $request->barang_id,
+            'qty'         => $request->qty,
+            'harga'       => $request->harga,
+            'supplier_id' => $request->supplier_id,
+            'no_sj'       => $request->no_sj,
+            'no_invoice'  => $request->no_invoice,
+            'order_id'    => $request->order_id,
+        ]);
 
         // 2️⃣ Update stok barang
         $barang = Barang::findOrFail($request->barang_id);
@@ -64,14 +77,24 @@ class IncomingBarangController extends Controller
             'barang_id'  => $request->barang_id,
             'qty'        => $request->qty,
             'tipe'       => 'IN',
-            'keterangan' => 'Barang masuk dari supplier',
+            'keterangan' => 'Barang masuk - SJ: '.$request->no_sj,
         ]);
+
+        // 4️⃣ (Optional tapi bagus) Update status PO
+        if ($request->order_id) {
+            $order = Orders::find($request->order_id);
+            if ($order) {
+                $order->status = 'received';
+                $order->save();
+            }
+        }
     });
 
     return redirect()
         ->route('incoming-barangs.index')
-        ->with('success', 'Barang berhasil masuk & mutasi tercatat');
+        ->with('success', 'Barang berhasil masuk & stok otomatis bertambah');
 }
+
 
 
     /**

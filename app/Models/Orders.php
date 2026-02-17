@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Orders extends Model
 {
+        const TYPE_MASUK = 'masuk';
+    const TYPE_KELUAR = 'keluar';
+    protected $casts = [
+    'tgl' => 'date',
+];
+
     protected $fillable = [
         'no',
         'type',
@@ -20,9 +26,10 @@ class Orders extends Model
     ];
 
     public function details()
-    {
-        return $this->hasMany(OrderDetail::class);
-    }
+{
+    return $this->hasMany(OrderDetail::class, 'order_id');
+}
+
 
     public function customer()
     {
@@ -33,4 +40,10 @@ class Orders extends Model
     {
         return $this->belongsTo(Supplier::class);
     }
+
+    public function incomingBarangs()
+{
+    return $this->hasMany(IncomingBarang::class);
+}
+
 }

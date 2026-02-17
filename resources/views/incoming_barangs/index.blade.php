@@ -18,6 +18,8 @@
             <thead class="thead-dark">
                 <tr>
                     <th>No</th>
+                    <th>No Surat Jalan</th>
+                    <th>No Invoice</th>
                     <th>Tanggal Masuk</th>
                     <th>Kode Barang</th>
                     <th>Nama Barang</th>
@@ -32,6 +34,8 @@
                 @foreach($incomingBarangs as $key => $item)
                 <tr>
                     <td>{{ $key + 1 }}</td>
+                    <td>{{ $item->no_sj }}</td>
+                    <td>{{ $item->no_invoice }}</td>
                     <td>{{ $item->tgl_masuk->format('d-m-Y') }}</td>
                     <td>{{ $item->barang->kode_barang }}</td>
                     <td>{{ $item->barang->nama_barang }}</td>

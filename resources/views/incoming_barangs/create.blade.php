@@ -9,6 +9,8 @@
     <form action="{{ route('incoming-barangs.store') }}" method="POST">
         @csrf
         <div class="card-body">
+        {{-- <div class="row">
+        <div class="col-md-4"> --}}
             <div class="form-group">
                 <label>Tanggal Masuk</label>
                 <input type="date" name="tgl_masuk" class="form-control" required>
@@ -19,7 +21,9 @@
                 <select name="barang_id" class="form-control" required>
                     <option value="">-- Pilih Barang --</option>
                     @foreach($barangs as $b)
-                        <option value="{{ $b->id }}">{{ $b->kode_barang }} - {{ $b->nama_barang }}</option>
+                        <option value="{{ $b->id }}">
+                            {{ $b->kode_barang }} - {{ $b->nama_barang }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -29,10 +33,24 @@
                 <select name="supplier_id" class="form-control" required>
                     <option value="">-- Pilih Supplier --</option>
                     @foreach($suppliers as $s)
-                        <option value="{{ $s->id }}">{{ $s->nama_supplier }}</option>
+                        <option value="{{ $s->id }}">
+                            {{ $s->nama_supplier }}
+                        </option>
                     @endforeach
                 </select>
             </div>
+
+            {{-- TAMBAHAN BARU --}}
+            <div class="form-group">
+                <label>No. Surat Jalan</label>
+                <input type="text" name="no_sj" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label>No. Invoice</label>
+                <input type="text" name="no_invoice" class="form-control">
+            </div>
+            {{-- END TAMBAHAN --}}
 
             <div class="form-group">
                 <label>Qty</label>

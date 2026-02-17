@@ -3,30 +3,51 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Invoice;
 
 class DeliveryNote extends Model
 {
+    protected $casts = [
+    'tgl' => 'datetime:Y-m-d', // otomatis jadi Carbon object
+];
     protected $fillable = [
-        'no',
-        'tgl',
-        'keterangan',
-        'alamat_kirim',
-        'order_id',
-    ];
+    'no',
+    'type',
+    'tgl',
+    'keterangan',
+    'alamat_kirim',
+    'order_id'
+];
 
-    public function order()
-    {
-        return $this->belongsTo(Orders::class);
-    }
+public function details()
+{
+    return $this->hasMany(DeliveryNoteDetail::class);
+}
 
-    public function details()
-    {
-        return $this->hasMany(DeliveryNoteDetail::class);
-    }
+public function order()
+{
+    return $this->belongsTo(Orders::class);
+}
+public function invoices()
+{
+    return $this->hasMany(Invoice::class);
+}
 
-    public function invoices()
-    {
-        return $this->hasMany(Invoice::class);
-    }
+
+public static function booted()
+{
+    static::created(function ($deliveryNote) {
+        foreach ($deliveryNote->details as $detail) {
+            $barang = $detail->barang;
+            if ($deliveryNote->type == 'masuk') {
+                $barang->stok += $detail->qty;
+            } else {
+                $barang->stok -= $detail->qty;
+            }
+            $barang->save();
+        }
+    });
+}
+
 
 }

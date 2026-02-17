@@ -151,34 +151,44 @@
                     </a>
 
                     <ul class="nav nav-treeview">
-                        <li class="nav-item"> 
-                                <a href="{{ route('surat-jalan.index') }}" class="nav-link {{ request()->is('pembelian/surat-jalan*') ? 'active' : '' }}"> 
-                                    <i class="nav-icon fas fa-solid fa-file"></i>
-                                    <p>Surat Jalan Pembelian</p> 
-                                </a> 
-                            </li> 
-                            <li class="nav-item"> 
-                                <a href="{{ route('faktur.index') }}" class="nav-link {{ request()->is('pembelian/faktur*') ? 'active' : '' }}"> 
-                                    <i class="nav-icon fas fa-solid fa-file-invoice-dollar"></i>
-                                    <p>Faktur Pembelian</p> 
-                                </a> 
-                            </li> 
-
                         <li class="nav-item">
-                            <a href="{{ route('faktur.index') }}"
+                            <a href="{{ route('pembelian.purchase-order.index') }}"
+                                class="nav-link {{ request()->is('pembelian/purchase-order*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-solid fa-file"></i>
+                                <p>Register PO Supplier</p>
+                            </a>
+                        </li>
+                        <li class="nav-item"> 
+    <a href="{{ route('pembelian.delivery-note.index') }}" 
+       class="nav-link {{ request()->is('pembelian/delivery-note*') ? 'active' : '' }}"> 
+        <i class="nav-icon fas fa-solid fa-file"></i>
+        <p>Surat Jalan Pembelian</p> 
+    </a> 
+</li>
+
+                            <li class="nav-item"> 
+    <a href="{{ route('pembelian.invoice.index') }}" 
+       class="nav-link {{ request()->is('pembelian/invoice*') ? 'active' : '' }}"> 
+        <i class="nav-icon fas fa-solid fa-file-invoice-dollar"></i>
+        <p>Faktur Pembelian</p> 
+    </a> 
+</li> 
+
+                        {{-- <li class="nav-item">
+                            <a href="{{ route('pembelian.invoice.index') }}"
                                 class="nav-link {{ request()->is('pembelian/data-pembelian*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-shopping-cart"></i>
                                 <p>Data Pembelian</p>
                             </a>
-                        </li>
+                        </li> --}}
 
-                        <li class="nav-item">
-                            <a href="{{ route('faktur.index') }}"
+                        {{-- <li class="nav-item">
+                            <a href="{{ route('pembelian.invoice.index') }}"
                                 class="nav-link {{ request()->is('pembelian/piutang*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-credit-card"></i>
                                 <p>Hutang Supplier</p>
                             </a>
-                        </li>
+                        </li> --}}
 
                     </ul>
                 </li>
@@ -190,34 +200,44 @@
                     </a>
 
                     <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                            <a href="{{ route('penjualan.sales-order.index') }}"
+                                class="nav-link {{ request()->is('penjualan/sales-order*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-solid fa-file"></i>
+                                <p>Register SO Customer</p>
+                            </a>
+                        </li>
                             <li class="nav-item"> 
-                                <a href="{{ route('surat-jalan.index') }}" class="nav-link {{ request()->is('penjualan/surat-jalan*') ? 'active' : '' }}"> 
-                                    <i class="nav-icon fas fa-solid fa-file"></i>
-                                    <p>Surat Jalan Penjualan</p> 
-                                </a> 
-                            </li> 
-                            <li class="nav-item"> 
-                                <a href="{{ route('faktur.index') }}" class="nav-link {{ request()->is('penjualan/faktur*') ? 'active' : '' }}"> 
-                                    <i class="nav-icon fas fa-solid fa-file-invoice-dollar"></i>
-                                    <p>Faktur Penjualan</p> 
-                                </a> 
-                            </li> 
+    <a href="{{ route('penjualan.delivery-note.index') }}" 
+       class="nav-link {{ request()->is('penjualan/delivery-note*') ? 'active' : '' }}"> 
+        <i class="nav-icon fas fa-solid fa-file"></i>
+        <p>Surat Jalan Penjualan</p> 
+    </a> 
+</li>
 
-                        <li class="nav-item">
-                            <a href="{{ route('faktur.index') }}"
+                            <li class="nav-item"> 
+    <a href="{{ route('penjualan.invoice.index') }}" 
+       class="nav-link {{ request()->is('penjualan/invoice*') ? 'active' : '' }}"> 
+        <i class="nav-icon fas fa-solid fa-file-invoice-dollar"></i>
+        <p>Faktur Penjualan</p> 
+    </a> 
+</li> 
+
+                        {{-- <li class="nav-item">
+                            <a href="{{ route('penjualan.invoice.index') }}"
                                 class="nav-link {{ request()->is('penjualan/data-penjualan*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-cash-register"></i>
                                 <p>Data Penjualan</p>
                             </a>
-                        </li>
+                        </li> --}}
 
-                        <li class="nav-item">
-                            <a href="{{ route('faktur.index') }}"
+                        {{-- <li class="nav-item">
+                            <a href="{{ route('penjualan.invoice.index') }}"
                                 class="nav-link {{ request()->is('penjualan/piutang*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-hand-holding-usd"></i>
                                 <p>Piutang Customer</p>
                             </a>
-                        </li>
+                        </li> --}}
 
                     </ul>
                 </li>
@@ -249,5 +269,8 @@
 <script src="{{ asset('adminlte/plugins/jquery/jquery.min.js') }}"></script>
 <script src="{{ asset('adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset('adminlte/dist/js/adminlte.min.js') }}"></script>
+
+@yield('scripts')
+
 </body>
 </html>
