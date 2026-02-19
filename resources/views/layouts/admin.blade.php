@@ -182,13 +182,13 @@
                             </a>
                         </li>
 
-                        {{-- <li class="nav-item">
-                            <a href="{{ route('pembelian.invoice.index') }}"
-                                class="nav-link {{ request()->is('pembelian/piutang*') ? 'active' : '' }}">
+                        <li class="nav-item">
+                            <a href="{{ route('pembelian.hutang.index') }}"
+                                class="nav-link {{ request()->is('pembelian/hutang*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-credit-card"></i>
                                 <p>Hutang Supplier</p>
                             </a>
-                        </li> --}}
+                        </li>
 
                     </ul>
                 </li>

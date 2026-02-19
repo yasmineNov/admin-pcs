@@ -65,6 +65,10 @@ class Invoice extends Model
 {
     return $this->belongsTo(Orders::class, 'order_id'); // pastikan field foreign key 'order_id' ada di table invoices
 }
+public function paymentDetails()
+{
+    return $this->hasMany(PaymentDetail::class);
+}
 
 
     /*

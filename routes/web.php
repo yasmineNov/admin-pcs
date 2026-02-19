@@ -200,6 +200,16 @@ Route::get('/penjualan/data-penjualan/print',[InvoiceController::class, 'printPe
 
 /*
 |--------------------------------------------------------------------------
+| HUTANG
+|--------------------------------------------------------------------------
+*/
+Route::get('/pembelian/hutang',[InvoiceController::class, 'laporanHutang'])->name('pembelian.hutang.index');
+Route::get('/api/hutang/{supplierId}',[InvoiceController::class, 'getHutangDetail']);
+Route::post('/pembelian/hutang/bayar',[InvoiceController::class, 'bayarHutang'])->name('pembelian.hutang.bayar');
+
+
+/*
+|--------------------------------------------------------------------------
 | AJAX
 |--------------------------------------------------------------------------
 */

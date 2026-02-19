@@ -1,33 +1,185 @@
 @extends('layouts.admin')
 
 @section('content')
-<h3> Piutang </h3>
-<table class="table" id="tblCustomer">
-@foreach($customers as $c)
-<tr data-id="{{ $c->id }}">
-<td>{{ $c->nama_customer }}</td>
-<td>{{ number_format($c->faktur->sum(fn($f)=>$f->sisa)) }}</td>
-</tr>
-@endforeach
-</table>
+<div class="card">
+    <div class="card-header bg-dark text-white">
+        <h4>Laporan Hutang</h4>
+    </div>
 
+    <div class="card-body">
 
-<table class="table" id="tblFaktur"></table>
+        <!-- =================== -->
+        <!--  ATAS - SUPPLIER   -->
+        <!-- =================== -->
 
+        <table class="table table-bordered table-striped" id="supplier-table">
+            <thead class="bg-secondary text-white">
+                <tr>
+                    <th>No</th>
+                    <th>Nama Supplier</th>
+                    <th>Total Hutang</th>
+                    <th>Terbayar</th>
+                    <th>Sisa</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($suppliers as $i => $supplier)
 
+                    @php
+                        $total = 0;
+                        $paid = 0;
+
+                        foreach($supplier->invoices as $inv){
+                            $total += $inv->grand_total;
+                            $paid += $inv->paymentDetails->sum('subtotal');
+                        }
+
+                        $sisa = $total - $paid;
+                    @endphp
+
+                    @if($sisa > 0)
+                    <tr class="supplier-row" data-id="{{ $supplier->id }}">
+                        <td>{{ $i+1 }}</td>
+                        <td>{{ $supplier->nama_supplier }}</td>
+                        <td>{{ number_format($total,0,',','.') }}</td>
+                        <td>{{ number_format($paid,0,',','.') }}</td>
+                        <td class="text-danger fw-bold">
+                            {{ number_format($sisa,0,',','.') }}
+                        </td>
+                    </tr>
+                    @endif
+
+                @endforeach
+            </tbody>
+        </table>
+
+        <hr>
+
+        <!-- =================== -->
+        <!--  BAWAH - DETAIL    -->
+        <!-- =================== -->
+
+        <h5>Detail Invoice Supplier</h5>
+
+        <table class="table table-bordered" id="invoice-detail-table">
+            <thead class="bg-light">
+                <tr>
+                    <th>No</th>
+                    <th>Tgl Invoice</th>
+                    <th>No Invoice</th>
+                    <th>No PO</th>
+                    <th>Jatuh Tempo</th>
+                    <th>Total</th>
+                    <th>Terbayar</th>
+                    <th>Kurang</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="8" class="text-center text-muted">
+                        Pilih supplier di atas
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <hr>
+
+<h5>Pelunasan Hutang</h5>
+
+<form method="POST" action="{{ route('pembelian.hutang.bayar') }}">
+    @csrf
+
+    <input type="hidden" name="supplier_id" id="supplier_id_input">
+
+    <div class="row">
+        <div class="col-md-3">
+            <label>Tanggal Pelunasan</label>
+            <input type="date" name="tgl"
+                   value="{{ date('Y-m-d') }}"
+                   class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label>Total Bayar</label>
+            <input type="number" name="jumlah_bayar"
+                   class="form-control"
+                   required>
+        </div>
+
+        <div class="col-md-3">
+            <label>Metode</label>
+            <select name="metode" class="form-control">
+                <option value="TF">Transfer</option>
+                <option value="Cash">Cash</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label>&nbsp;</label>
+            <button class="btn btn-success form-control">
+                Bayar
+            </button>
+        </div>
+    </div>
+</form>
+
+    </div>
+</div>
+@endsection
+
+@section('scripts')
 <script>
-document.querySelectorAll('#tblCustomer tr').forEach(row => {
-row.addEventListener('click', function () {
-fetch('/penjualan/piutang/' + this.dataset.id)
-.then(res => res.json())
-.then(data => {
-let html = `<tr><th>No Faktur</th><th>Total</th><th>Terbayar</th><th>Sisa</th></tr>`;
-data.forEach(d => {
-html += `<tr><td>${d.no_faktur}</td><td>${d.total}</td><td>${d.terbayar}</td><td>${d.sisa}</td></tr>`;
+document.querySelectorAll('.supplier-row').forEach(row => {
+
+    row.addEventListener('click', function(){
+
+        let supplierId = this.dataset.id;
+
+        fetch(`/api/hutang/${supplierId}`)
+            .then(res => res.json())
+            .then(data => {
+
+                let tbody = document.querySelector('#invoice-detail-table tbody');
+                tbody.innerHTML = '';
+
+                if(data.length === 0){
+                    tbody.innerHTML =
+                        '<tr><td colspan="8" class="text-center">Tidak ada hutang</td></tr>';
+                    return;
+                }
+
+                data.forEach((item, index) => {
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${index+1}</td>
+                            <td>${item.tgl}</td>
+                            <td>${item.no}</td>
+                            <td>${item.no_so ?? '-'}</td>
+                            <td>${item.jatuh_tempo}</td>
+                            <td>${item.total}</td>
+                            <td>${item.paid}</td>
+                            <td style="color:red;font-weight:bold;">
+                                ${item.sisa}
+                            </td>
+                        </tr>
+                    `;
+                });
+
+            });
+
+    });
+
 });
-document.getElementById('tblFaktur').innerHTML = html;
+document.querySelectorAll('.supplier-row').forEach(row => {
+
+    row.addEventListener('click', function(){
+        let supplierId = this.dataset.id;
+
+        document.getElementById('supplier_id_input').value = supplierId;
+    });
+
 });
-});
-});
+
 </script>
 @endsection

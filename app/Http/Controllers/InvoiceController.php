@@ -3,15 +3,16 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Payment;
+use App\Models\PaymentDetail;
 use App\Models\Orders;
 use App\Models\Invoice;
 use App\Models\OrderDetail;
-use App\Models\Barang;
+use App\Models\Supplier;
 use App\Models\DeliveryNote;
 use App\Models\DeliveryNoteDetail;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use App\Exports\PembelianExport;
 
 class InvoiceController extends Controller
 {
@@ -166,6 +167,127 @@ public function printPenjualan(Request $request)
         'totalPpn',
         'grandTotal'
     ));
+}
+
+    // ===========================
+    // LAPORAN HUTANG
+    // ===========================
+
+public function laporanHutang(Request $request)
+{
+    $suppliers = Supplier::with([
+        'invoices' => function ($q) {
+            $q->where('type', Invoice::TYPE_MASUK);
+        },
+        'invoices.paymentDetails'
+    ])->get();
+
+    return view('pembelian.hutang.index', compact('suppliers'));
+}
+public function getHutangDetail($supplierId)
+{
+    $invoices = Invoice::with('paymentDetails')
+        ->where('supplier_id', $supplierId)
+        ->where('type', Invoice::TYPE_MASUK)
+        ->get();
+
+    $data = $invoices->map(function($inv){
+
+        $paid = $inv->paymentDetails->sum('subtotal');
+        $sisa = $inv->grand_total - $paid;
+
+        if($sisa <= 0) return null;
+
+        return [
+            'tgl' => $inv->tgl->format('d-m-Y'),
+            'no' => $inv->no,
+            'no_so' => $inv->no_so,
+            'jatuh_tempo' => $inv->jatuh_tempo->format('d-m-Y'),
+            'total' => number_format($inv->grand_total,0,',','.'),
+            'paid' => number_format($paid,0,',','.'),
+            'sisa' => number_format($sisa,0,',','.')
+        ];
+    })->filter()->values();
+
+    return response()->json($data);
+}
+
+public function bayarHutang(Request $request)
+{
+    $request->validate([
+        'supplier_id' => 'required|exists:suppliers,id',
+        'jumlah_bayar' => 'required|numeric|min:1',
+        'metode' => 'required'
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+
+        $supplierId = $request->supplier_id;
+        $sisaPembayaran = $request->jumlah_bayar;
+
+        // Ambil semua invoice hutang supplier (urut paling lama)
+        $invoices = Invoice::where('supplier_id', $supplierId)
+            ->where('type', Invoice::TYPE_MASUK)
+            ->orderBy('tgl', 'asc')
+            ->get();
+
+        // Buat header payment
+        $payment = Payment::create([
+            'total' => $request->jumlah_bayar,
+            'keterangan' => 'Pelunasan Hutang',
+            'type' => 'hutang',
+            'supplier_id' => $supplierId,
+            'customer_id' => null,
+        ]);
+
+        foreach ($invoices as $invoice) {
+
+            if ($sisaPembayaran <= 0) break;
+
+            $sudahDibayar = $invoice->paymentDetails()->sum('subtotal');
+            $kurang = $invoice->grand_total - $sudahDibayar;
+
+            if ($kurang <= 0) continue;
+
+            if ($sisaPembayaran >= $kurang) {
+                // lunas
+                $bayar = $kurang;
+            } else {
+                // bayar sebagian
+                $bayar = $sisaPembayaran;
+            }
+
+            // simpan detail pembayaran
+            PaymentDetail::create([
+                'payment_id' => $payment->id,
+                'invoice_id' => $invoice->id,
+                'subtotal' => $bayar
+            ]);
+
+            // update kolom paid di invoice
+            $invoice->paid += $bayar;
+
+            if ($invoice->paid >= $invoice->grand_total) {
+                $invoice->status = 'paid';
+            }
+
+            $invoice->save();
+
+            $sisaPembayaran -= $bayar;
+        }
+
+        DB::commit();
+
+        return back()->with('success', 'Pembayaran berhasil disimpan.');
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return back()->withErrors($e->getMessage());
+    }
 }
 
 
