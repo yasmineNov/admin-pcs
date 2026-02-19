@@ -14,7 +14,7 @@ class DeliveryNoteController extends Controller
     // ===========================
     // INDEX
     // ===========================
-    
+
     // DN Pembelian (Masuk)
     public function indexMasuk()
     {
@@ -173,21 +173,21 @@ class DeliveryNoteController extends Controller
             return view('penjualan.delivery_note.edit', compact('deliveryNote', 'orders'));
         }
     }
-    
+
     // ===========================
     // SHOW
     // ===========================
 
     public function show(DeliveryNote $deliveryNote)
-{
-    $deliveryNote->load('details.orderDetail.barang', 'order');
+    {
+        $deliveryNote->load('details.orderDetail.barang', 'order');
 
-    if ($deliveryNote->type == 'masuk') {
-        return view('pembelian.delivery_note.show', compact('deliveryNote'));
-    } else {
-        return view('penjualan.delivery_note.show', compact('deliveryNote'));
+        if ($deliveryNote->type == 'masuk') {
+            return view('pembelian.delivery_note.show', compact('deliveryNote'));
+        } else {
+            return view('penjualan.delivery_note.show', compact('deliveryNote'));
+        }
     }
-}
 
     // ===========================
     // UPDATE
@@ -249,7 +249,7 @@ class DeliveryNoteController extends Controller
     public function destroy(DeliveryNote $deliveryNote)
     {
         // Rollback stok sebelum hapus
-        foreach($deliveryNote->details as $d) {
+        foreach ($deliveryNote->details as $d) {
             $barang = $d->orderDetail->barang;
             if ($deliveryNote->type == 'masuk') {
                 $barang->stok -= $d->orderDetail->qty;
@@ -266,19 +266,41 @@ class DeliveryNoteController extends Controller
     }
 
     public function getDeliveryNoteDetail($id)
-{
-    $dn = DeliveryNote::with('details.orderDetail.barang')->findOrFail($id);
+    {
+        $dn = DeliveryNote::with('details.orderDetail.barang')->findOrFail($id);
 
-    $items = $dn->details->map(function ($detail) {
-        return [
-            'barang_id'   => $detail->orderDetail->barang->id,
-            'nama_barang' => $detail->orderDetail->barang->nama_barang,
-            'qty'         => $detail->orderDetail->qty,
-        ];
-    });
+        $items = $dn->details->map(function ($detail) {
+            return [
+                'barang_id' => $detail->orderDetail->barang->id,
+                'nama_barang' => $detail->orderDetail->barang->nama_barang,
+                'qty' => $detail->orderDetail->qty,
+            ];
+        });
 
-    return response()->json($items);
-}
+        return response()->json($items);
+    }
 
+    // ===========================
+    // DETAILS
+    // ===========================
+    public function showDetailPO($id)
+    {
+        $dn = DeliveryNote::with([
+            'order.supplier',
+            'details.orderDetail.barang'
+        ])->findOrFail($id);
+
+        return view('pembelian.delivery_note.detail', compact('dn'));
+    }
+
+    public function showDetailSO($id)
+    {
+        $dn = DeliveryNote::with([
+            'order.supplier',
+            'details.orderDetail.barang'
+        ])->findOrFail($id);
+
+        return view('penjualan.surat-jalan.detail', compact('dn'));
+    }
 
 }

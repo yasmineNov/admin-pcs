@@ -136,6 +136,12 @@ class OrdersController extends Controller
         return response()->json($po->details);
     }
 
+    public function showDetailPO($id)
+    {
+        $po = Orders::with('details.barang')->findOrFail($id);
+        return view('pembelian.purchase-order.detail', compact('po'));
+    }
+
     //============================= End pembelian ========================================================
 
     //============================= PENJUALAN ========================================================
@@ -233,10 +239,10 @@ class OrdersController extends Controller
         return response()->json($so->details);
     }
 
-    public function show($id)
+    public function showDetailSO($id)
     {
         $po = Orders::with('details.barang')->findOrFail($id);
-        return view('pembelian.purchase-order.detail', compact('po'));
+        return view('penjualan.sales-order.detail', compact('po'));
     }
 
 

@@ -13,8 +13,8 @@
             <td>{{ $po->tgl->format('d-m-Y') }}</td>
         </tr>
         <tr>
-            <th>Supplier</th>
-            <td>{{ $po->supplier->nama_supplier ?? '-' }}</td>
+            <th>Customer</th>
+            <td>{{ $po->customer->nama_customer ?? '-' }}</td>
         </tr>
         <tr>
             <th>DPP</th>
