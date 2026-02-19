@@ -6,7 +6,7 @@ use App\Models\Orders;
 use App\Models\Barang;
 use App\Models\Customer;
 use App\Models\Supplier;
-use App\Models\OrderDetail;
+use App\Models\DeliveryNote;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -58,7 +58,8 @@ class OrdersController extends Controller
     {
         $suppliers = Supplier::all();
         $barangs = Barang::all();
-        return view('pembelian.purchase-order.create', compact('suppliers', 'barangs'));
+        $deliveryNotes = DeliveryNote::where('type', 'masuk')->get(); // <- ini
+        return view('pembelian.purchase-order.create', compact('suppliers', 'barangs','deliveryNotes'));
     }
 
     public function storePO(Request $request)

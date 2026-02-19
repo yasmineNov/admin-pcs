@@ -38,7 +38,7 @@
 
     </div>
     <div class="col-md-3">
-        <label>Alamat Kirim</label>
+        <label>Alamat Supplier</label>
         <input type="text" name="alamat_kirim" class="form-control" required>
     </div>
     </div>

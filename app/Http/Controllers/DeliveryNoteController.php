@@ -22,7 +22,7 @@ class DeliveryNoteController extends Controller
             ->with('details.orderDetail.barang', 'order.supplier')
             ->latest()->get();
 
-        return view('pembelian.delivery_note.index', 'pembelian.invoice.index', compact('deliveryNotes'));
+        return view('pembelian.delivery_note.index', compact('deliveryNotes'));
     }
 
     // DN Penjualan (Keluar)

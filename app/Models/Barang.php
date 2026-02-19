@@ -9,6 +9,8 @@ use App\Models\MutasiBarang;
 
 class Barang extends Model
 {
+    protected $table = 'barangs';
+
     protected $fillable = [
     'kode_barang',
         'nama_barang',
