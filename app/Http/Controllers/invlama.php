@@ -79,8 +79,8 @@ class InvoiceController extends Controller
         $no_so = $dn->order->no ?? null;
 
         $dpp = collect($request->details)->sum(fn($item) => $item['qty'] * $item['harga']);
-        $ppn = $dpp * 0.11;
-        $total = $dpp + $ppn;
+        $pajak = $dpp * 0.11;
+        $total = $dpp + $pajak;
 
         $invoice = Invoice::create([
             'no' => $request->no,
@@ -91,7 +91,7 @@ class InvoiceController extends Controller
             'customer_id' => null,
             'supplier_id' => $supplier_id,
             'dpp' => $dpp,
-            'ppn' => $ppn,
+            'ppn' => $pajak,
             'grand_total' => $total,
             'status' => 'unpaid',
             'type' => 'in',

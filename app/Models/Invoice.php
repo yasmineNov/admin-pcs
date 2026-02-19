@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\InvoiceDetail;
+use App\Models\orders;
 
 class Invoice extends Model
 {
@@ -59,6 +61,11 @@ class Invoice extends Model
     {
         return $this->belongsTo(DeliveryNote::class);
     }
+    public function order()
+{
+    return $this->belongsTo(Orders::class, 'order_id'); // pastikan field foreign key 'order_id' ada di table invoices
+}
+
 
     /*
     |--------------------------------------------------------------------------
@@ -76,5 +83,9 @@ class Invoice extends Model
     public function getIsLunasAttribute()
     {
         return $this->paid >= $this->grand_total;
+    }
+    public function details()
+    {
+        return $this->hasMany(InvoiceDetail::class);
     }
 }
