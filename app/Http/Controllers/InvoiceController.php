@@ -10,6 +10,8 @@ use App\Models\Barang;
 use App\Models\DeliveryNote;
 use App\Models\DeliveryNoteDetail;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use App\Exports\PembelianExport;
 
 class InvoiceController extends Controller
 {
@@ -36,6 +38,86 @@ class InvoiceController extends Controller
 
         return view('penjualan.invoice.index', compact('invoices'));
     }
+
+public function dataPembelian(Request $request)
+{
+    $query = Invoice::with([
+        'supplier',
+        'details.orderDetail'
+    ])->where('type', Invoice::TYPE_MASUK);
+
+    // Filter tanggal
+    if ($request->from && $request->to) {
+        $query->whereBetween('tgl', [
+            Carbon::parse($request->from),
+            Carbon::parse($request->to)
+        ]);
+    }
+
+    $invoices = $query->latest()->get();
+
+    // Summary
+    $totalDpp = $invoices->sum('dpp');
+    $totalPpn = $invoices->sum('ppn');
+    $grandTotal = $invoices->sum('grand_total');
+    $suppliers = \App\Models\Supplier::all(); // <<< WAJIB ADA INI
+
+    return view('pembelian.data-pembelian.index', compact(
+        'invoices',
+        'totalDpp',
+        'totalPpn',
+        'grandTotal',
+        'suppliers' 
+    ));
+}
+
+public function exportPembelian(Request $request)
+{
+    $invoices = Invoice::with('supplier')
+        ->where('type', Invoice::TYPE_MASUK)
+        ->get();
+
+    $filename = "laporan_pembelian.xls";
+
+    $headers = [
+        "Content-Type" => "application/vnd.ms-excel",
+        "Content-Disposition" => "attachment; filename=$filename",
+    ];
+
+    return response()->view(
+        'pembelian.data-pembelian.excel',
+        compact('invoices'),
+        200,
+        $headers
+    );
+}
+public function printPembelian(Request $request)
+{
+    $query = Invoice::with('supplier')
+        ->where('type', Invoice::TYPE_MASUK);
+
+    if ($request->filled('from') && $request->filled('to')) {
+        $query->whereBetween('tgl', [$request->from, $request->to]);
+    }
+
+    if ($request->filled('supplier_id')) {
+        $query->where('supplier_id', $request->supplier_id);
+    }
+
+    $invoices = $query->latest()->get();
+
+    $totalDpp = $invoices->sum('dpp');
+    $totalPpn = $invoices->sum('ppn');
+    $grandTotal = $invoices->sum('grand_total');
+
+    return view('pembelian.data-pembelian.print', compact(
+        'invoices',
+        'totalDpp',
+        'totalPpn',
+        'grandTotal'
+    ));
+}
+
 
     // ===========================
     // CREATE
