@@ -138,6 +138,11 @@ Route::get('/invoice/delivery-note/{id}', [InvoiceController::class, 'getDeliver
 //     Route::resource('invoice', InvoiceController::class);
 // });
 
+//modal ROUTEE
+
+Route::get('/po/{id}', [OrdersController::class, 'show']);
+
+
 
 
 
