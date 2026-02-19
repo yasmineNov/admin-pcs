@@ -39,84 +39,84 @@ class InvoiceController extends Controller
         return view('penjualan.invoice.index', compact('invoices'));
     }
 
-public function dataPembelian(Request $request)
-{
-    $query = Invoice::with([
-        'supplier',
-        'details.orderDetail'
-    ])->where('type', Invoice::TYPE_MASUK);
+    public function dataPembelian(Request $request)
+    {
+        $query = Invoice::with([
+            'supplier',
+            'details.orderDetail'
+        ])->where('type', Invoice::TYPE_MASUK);
 
-    // Filter tanggal
-    if ($request->from && $request->to) {
-        $query->whereBetween('tgl', [
-            Carbon::parse($request->from),
-            Carbon::parse($request->to)
-        ]);
+        // Filter tanggal
+        if ($request->from && $request->to) {
+            $query->whereBetween('tgl', [
+                Carbon::parse($request->from),
+                Carbon::parse($request->to)
+            ]);
+        }
+
+        $invoices = $query->latest()->get();
+
+        // Summary
+        $totalDpp = $invoices->sum('dpp');
+        $totalPpn = $invoices->sum('ppn');
+        $grandTotal = $invoices->sum('grand_total');
+        $suppliers = \App\Models\Supplier::all(); // <<< WAJIB ADA INI
+
+        return view('pembelian.data-pembelian.index', compact(
+            'invoices',
+            'totalDpp',
+            'totalPpn',
+            'grandTotal',
+            'suppliers'
+        ));
     }
 
-    $invoices = $query->latest()->get();
+    public function exportPembelian(Request $request)
+    {
+        $invoices = Invoice::with('supplier')
+            ->where('type', Invoice::TYPE_MASUK)
+            ->get();
 
-    // Summary
-    $totalDpp = $invoices->sum('dpp');
-    $totalPpn = $invoices->sum('ppn');
-    $grandTotal = $invoices->sum('grand_total');
-    $suppliers = \App\Models\Supplier::all(); // <<< WAJIB ADA INI
+        $filename = "laporan_pembelian.xls";
 
-    return view('pembelian.data-pembelian.index', compact(
-        'invoices',
-        'totalDpp',
-        'totalPpn',
-        'grandTotal',
-        'suppliers' 
-    ));
-}
+        $headers = [
+            "Content-Type" => "application/vnd.ms-excel",
+            "Content-Disposition" => "attachment; filename=$filename",
+        ];
 
-public function exportPembelian(Request $request)
-{
-    $invoices = Invoice::with('supplier')
-        ->where('type', Invoice::TYPE_MASUK)
-        ->get();
-
-    $filename = "laporan_pembelian.xls";
-
-    $headers = [
-        "Content-Type" => "application/vnd.ms-excel",
-        "Content-Disposition" => "attachment; filename=$filename",
-    ];
-
-    return response()->view(
-        'pembelian.data-pembelian.excel',
-        compact('invoices'),
-        200,
-        $headers
-    );
-}
-public function printPembelian(Request $request)
-{
-    $query = Invoice::with('supplier')
-        ->where('type', Invoice::TYPE_MASUK);
-
-    if ($request->filled('from') && $request->filled('to')) {
-        $query->whereBetween('tgl', [$request->from, $request->to]);
+        return response()->view(
+            'pembelian.data-pembelian.excel',
+            compact('invoices'),
+            200,
+            $headers
+        );
     }
+    public function printPembelian(Request $request)
+    {
+        $query = Invoice::with('supplier')
+            ->where('type', Invoice::TYPE_MASUK);
 
-    if ($request->filled('supplier_id')) {
-        $query->where('supplier_id', $request->supplier_id);
+        if ($request->filled('from') && $request->filled('to')) {
+            $query->whereBetween('tgl', [$request->from, $request->to]);
+        }
+
+        if ($request->filled('supplier_id')) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        $invoices = $query->latest()->get();
+
+        $totalDpp = $invoices->sum('dpp');
+        $totalPpn = $invoices->sum('ppn');
+        $grandTotal = $invoices->sum('grand_total');
+
+        return view('pembelian.data-pembelian.print', compact(
+            'invoices',
+            'totalDpp',
+            'totalPpn',
+            'grandTotal'
+        ));
     }
-
-    $invoices = $query->latest()->get();
-
-    $totalDpp = $invoices->sum('dpp');
-    $totalPpn = $invoices->sum('ppn');
-    $grandTotal = $invoices->sum('grand_total');
-
-    return view('pembelian.data-pembelian.print', compact(
-        'invoices',
-        'totalDpp',
-        'totalPpn',
-        'grandTotal'
-    ));
-}
 
 
     // ===========================
@@ -126,19 +126,19 @@ public function printPembelian(Request $request)
     public function createMasuk()
     {
         $suppliers = \App\Models\Supplier::all();
-        $deliveryNotes = DeliveryNote::where('type','masuk')->with('order.supplier')->get();
+        $deliveryNotes = DeliveryNote::where('type', 'masuk')->with('order.supplier')->get();
         $orderDetails = OrderDetail::with('barang')->get();
 
-        return view('pembelian.invoice.create', compact('suppliers','deliveryNotes','orderDetails'));
+        return view('pembelian.invoice.create', compact('suppliers', 'deliveryNotes', 'orderDetails'));
     }
 
     public function createKeluar()
     {
         $customers = \App\Models\Customer::all();
-        $deliveryNotes = DeliveryNote::where('type','keluar')->with('order.customer')->get();
+        $deliveryNotes = DeliveryNote::where('type', 'keluar')->with('order.customer')->get();
         $orderDetails = OrderDetail::with('barang')->get();
 
-        return view('penjualan.invoice.create', compact('customers','deliveryNotes','orderDetails'));
+        return view('penjualan.invoice.create', compact('customers', 'deliveryNotes', 'orderDetails'));
     }
 
     // ===========================
@@ -179,9 +179,9 @@ public function printPembelian(Request $request)
             'status' => 'unpaid',
             'paid' => 0,
             'type' => Invoice::TYPE_MASUK,
-        ]);      
+        ]);
 
-        foreach($request->details as $item){
+        foreach ($request->details as $item) {
             $invoice->details()->create([
                 'order_detail_id' => $item['order_detail_id'],
                 'subtotal' => $item['qty'] * $item['harga'],
@@ -189,89 +189,89 @@ public function printPembelian(Request $request)
         }
 
         return redirect()->route('pembelian.invoice.index')
-            ->with('success','Invoice berhasil dibuat.');
+            ->with('success', 'Invoice berhasil dibuat.');
     }
 
     public function storeKeluar(Request $request)
-{
-    $request->validate([
-        'tgl' => 'required|date',
-        'jatuh_tempo' => 'required|date',
-        'delivery_note_id' => 'required|exists:delivery_notes,id',
-        'details' => 'required|array|min:1',
-        'details.*.order_detail_id' => 'required|exists:order_details,id',
-        'details.*.qty' => 'required|numeric|min:1',
-        'details.*.harga' => 'required|numeric|min:0',
-    ]);
-
-    DB::beginTransaction();
-
-    try {
-
-        // Ambil delivery note + customer
-        $dn = DeliveryNote::with('order.customer')
-                ->findOrFail($request->delivery_note_id);
-
-        $customer_id = $dn->order->customer->id ?? null;
-        $no_so = $dn->order->no ?? null;
-
-        if (!$customer_id) {
-            throw new \Exception('Customer tidak ditemukan pada Delivery Note.');
-        }
-
-        // Hitung DPP dari detail
-        $dpp = collect($request->details)->sum(function ($item) {
-            return $item['qty'] * $item['harga'];
-        });
-
-        $ppn = $dpp * 0.11;
-        $grand_total = $dpp + $ppn;
-
-        // Generate nomor invoice di sini (lebih aman)
-        $invoiceNumber = generateDocumentNumber('invoices', 'INV');
-
-        // Simpan invoice
-        $invoice = Invoice::create([
-            'no' => $invoiceNumber,
-            'no_so' => $no_so,
-            'tgl' => $request->tgl,
-            'jatuh_tempo' => $request->jatuh_tempo,
-            'delivery_note_id' => $dn->id,
-            'customer_id' => $customer_id,
-            'supplier_id' => null,
-            'dpp' => $dpp,
-            'ppn' => $ppn,
-            'grand_total' => $grand_total,
-            'status' => 'unpaid',
-            'paid' => 0,
-            'type' => Invoice::TYPE_KELUAR,
+    {
+        $request->validate([
+            'tgl' => 'required|date',
+            'jatuh_tempo' => 'required|date',
+            'delivery_note_id' => 'required|exists:delivery_notes,id',
+            'details' => 'required|array|min:1',
+            'details.*.order_detail_id' => 'required|exists:order_details,id',
+            'details.*.qty' => 'required|numeric|min:1',
+            'details.*.harga' => 'required|numeric|min:0',
         ]);
 
-        // Simpan detail
-        foreach ($request->details as $item) {
+        DB::beginTransaction();
 
-            $invoice->details()->create([
-                'order_detail_id' => $item['order_detail_id'],
-                'subtotal' => $item['qty'] * $item['harga'],
+        try {
+
+            // Ambil delivery note + customer
+            $dn = DeliveryNote::with('order.customer')
+                ->findOrFail($request->delivery_note_id);
+
+            $customer_id = $dn->order->customer->id ?? null;
+            $no_so = $dn->order->no ?? null;
+
+            if (!$customer_id) {
+                throw new \Exception('Customer tidak ditemukan pada Delivery Note.');
+            }
+
+            // Hitung DPP dari detail
+            $dpp = collect($request->details)->sum(function ($item) {
+                return $item['qty'] * $item['harga'];
+            });
+
+            $ppn = $dpp * 0.11;
+            $grand_total = $dpp + $ppn;
+
+            // Generate nomor invoice di sini (lebih aman)
+            $invoiceNumber = generateDocumentNumber('invoices', 'INV');
+
+            // Simpan invoice
+            $invoice = Invoice::create([
+                'no' => $invoiceNumber,
+                'no_so' => $no_so,
+                'tgl' => $request->tgl,
+                'jatuh_tempo' => $request->jatuh_tempo,
+                'delivery_note_id' => $dn->id,
+                'customer_id' => $customer_id,
+                'supplier_id' => null,
+                'dpp' => $dpp,
+                'ppn' => $ppn,
+                'grand_total' => $grand_total,
+                'status' => 'unpaid',
+                'paid' => 0,
+                'type' => Invoice::TYPE_KELUAR,
             ]);
 
+            // Simpan detail
+            foreach ($request->details as $item) {
+
+                $invoice->details()->create([
+                    'order_detail_id' => $item['order_detail_id'],
+                    'subtotal' => $item['qty'] * $item['harga'],
+                ]);
+
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('penjualan.invoice.index')
+                ->with('success', 'Invoice berhasil dibuat.');
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return back()
+                ->withErrors($e->getMessage())
+                ->withInput();
         }
-
-        DB::commit();
-
-        return redirect()
-            ->route('penjualan.invoice.index')
-            ->with('success', 'Invoice berhasil dibuat.');
-
-    } catch (\Exception $e) {
-
-        DB::rollBack();
-
-        return back()
-            ->withErrors($e->getMessage())
-            ->withInput();
     }
-}
 
 
     // ===========================
@@ -406,18 +406,42 @@ public function printPembelian(Request $request)
         return response()->json($items);
     }
 
+    public function detailSales($id)
+    {
+        $invoice = Invoice::with([
+            'deliveryNote.details.orderDetail.barang',
+            'deliveryNote.order.customer'
+        ])->findOrFail($id);
+
+        return view('penjualan.invoice.detail', compact('invoice'));
+    }
+    public function detailPurchase($id)
+    {
+        $invoice = Invoice::with([
+            'deliveryNote.details.orderDetail.barang',
+            'deliveryNote.order.customer'
+        ])->findOrFail($id);
+
+        return view('pembelian.invoice.detail', compact('invoice'));
+    }
+
+
+
+
     public function getDeliveryNoteDetail($id)
     {
-        $dn = DeliveryNote::with('details.orderDetail.barang','order.customer','order.supplier')->findOrFail($id);
+        $dn = DeliveryNote::with('details.orderDetail.barang', 'order.customer', 'order.supplier')->findOrFail($id);
 
         $items = $dn->details->map(fn($d) => [
             'barang_id' => $d->orderDetail->barang->id,
             'order_detail_id' => $d->orderDetail->id,
             'nama_barang' => $d->orderDetail->barang->nama_barang,
-            'qty' => $d->orderDetail->qty,
+            'qty' => $d->OrderDetail->qty, // pakai qty yang dikirim
+            'harga' => $d->orderDetail->harga, // INI WAJIB
             'supplier_name' => $dn->order->supplier->nama_supplier ?? '',
             'customer_name' => $dn->order->customer->nama_customer ?? '',
         ]);
+
 
         return response()->json($items);
     }
