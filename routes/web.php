@@ -36,7 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('mutasi-barangs', MutasiBarangController::class);
     Route::resource('orders', OrdersController::class);
     Route::resource('delivery-notes', DeliveryNoteController::class);
-    Route::resource('payments', PaymentController::class)->only(['index','store','show','destroy']);
+    Route::resource('payments', PaymentController::class)->only(['index', 'store', 'show', 'destroy']);
 });
 
 /*
@@ -71,16 +71,19 @@ Route::prefix('kas')->name('kas.')->group(function () {
 
 Route::prefix('pembelian/purchase-order')
     ->name('pembelian.purchase-order.')
-    ->group(function() {
+    ->group(function () {
         Route::get('/', [OrdersController::class, 'indexPO'])->name('index');
         Route::get('/create', [OrdersController::class, 'createPO'])->name('create');
         Route::post('/store', [OrdersController::class, 'storePO'])->name('store');
-});
+    });
 
-Route::get('/pembelian/purchase-order/{id}/detail',
-    [OrdersController::class, 'detail'])
+Route::get(
+    '/pembelian/purchase-order/{id}/detail',
+    [OrdersController::class, 'detail']
+)
     ->name('pembelian.purchase-order.detail');
 
+Route::get('/po/{id}', [OrdersController::class, 'showDetailPO']);
 /*
 |--------------------------------------------------------------------------
 | SALES ORDER
@@ -89,16 +92,18 @@ Route::get('/pembelian/purchase-order/{id}/detail',
 
 Route::prefix('penjualan/sales-order')
     ->name('penjualan.sales-order.')
-    ->group(function() {
+    ->group(function () {
         Route::get('/', [OrdersController::class, 'indexSO'])->name('index');
         Route::get('/create', [OrdersController::class, 'createSO'])->name('create');
         Route::post('/store', [OrdersController::class, 'storeSO'])->name('store');
-});
+    });
 
-Route::get('/penjualan/sales-order/{id}/detail',
-    [OrdersController::class, 'detailSO'])
+Route::get(
+    '/penjualan/sales-order/{id}/detail',
+    [OrdersController::class, 'detailSO']
+)
     ->name('penjualan.sales-order.detail');
-
+Route::get('/so/{id}', [OrdersController::class, 'showDetailSO']);
 /*
 |--------------------------------------------------------------------------
 | DELIVERY NOTE PEMBELIAN
@@ -107,7 +112,7 @@ Route::get('/penjualan/sales-order/{id}/detail',
 
 Route::prefix('pembelian/delivery-note')
     ->name('pembelian.delivery-note.')
-    ->group(function() {
+    ->group(function () {
         Route::get('/', [DeliveryNoteController::class, 'indexMasuk'])->name('index');
         Route::get('/create', [DeliveryNoteController::class, 'createMasuk'])->name('create');
         Route::post('/', [DeliveryNoteController::class, 'store'])
@@ -117,7 +122,9 @@ Route::prefix('pembelian/delivery-note')
         Route::put('/{deliveryNote}', [DeliveryNoteController::class, 'update'])->name('update');
         Route::delete('/{deliveryNote}', [DeliveryNoteController::class, 'destroy'])->name('destroy');
         Route::get('/{deliveryNote}', [DeliveryNoteController::class, 'show'])->name('show');
-});
+    });
+Route::get('/dnpo/{id}', [DeliveryNoteController::class, 'showDetailPO']);
+
 
 /*
 |--------------------------------------------------------------------------
@@ -127,7 +134,7 @@ Route::prefix('pembelian/delivery-note')
 
 Route::prefix('penjualan/delivery-note')
     ->name('penjualan.delivery-note.')
-    ->group(function() {
+    ->group(function () {
         Route::get('/', [DeliveryNoteController::class, 'indexKeluar'])->name('index');
         Route::get('/create', [DeliveryNoteController::class, 'createKeluar'])->name('create');
         Route::post('/', [DeliveryNoteController::class, 'store'])
@@ -137,7 +144,9 @@ Route::prefix('penjualan/delivery-note')
         Route::put('/{deliveryNote}', [DeliveryNoteController::class, 'update'])->name('update');
         Route::delete('/{deliveryNote}', [DeliveryNoteController::class, 'destroy'])->name('destroy');
         Route::get('/{deliveryNote}', [DeliveryNoteController::class, 'show'])->name('show');
-});
+    });
+Route::get('/dnso/{id}', [DeliveryNoteController::class, 'showDetailSO']);
+
 
 /*
 |--------------------------------------------------------------------------
@@ -147,11 +156,12 @@ Route::prefix('penjualan/delivery-note')
 
 Route::prefix('pembelian/invoice')
     ->name('pembelian.invoice.')
-    ->group(function() {
+    ->group(function () {
         Route::get('/', [InvoiceController::class, 'indexMasuk'])->name('index');
         Route::get('/create', [InvoiceController::class, 'createMasuk'])->name('create');
         Route::post('/', [InvoiceController::class, 'storeMasuk'])->name('store');
-});
+    });
+
 
 /*
 |--------------------------------------------------------------------------
@@ -161,11 +171,11 @@ Route::prefix('pembelian/invoice')
 
 Route::prefix('penjualan/invoice')
     ->name('penjualan.invoice.')
-    ->group(function() {
+    ->group(function () {
         Route::get('/', [InvoiceController::class, 'indexKeluar'])->name('index');
         Route::get('/create', [InvoiceController::class, 'createKeluar'])->name('create');
         Route::post('/', [InvoiceController::class, 'storeKeluar'])->name('store');
-});
+    });
 
 
 /*
@@ -184,14 +194,55 @@ Route::get('/pembelian/data-pembelian/print',[InvoiceController::class, 'printPe
 |--------------------------------------------------------------------------
 */
 
-Route::get('/invoice/delivery-note/{id}',
-    [InvoiceController::class, 'getDeliveryNoteDetail'])
+Route::get(
+    '/invoice/delivery-note/{id}',
+    [InvoiceController::class, 'getDeliveryNoteDetail']
+)
     ->name('invoice.getDeliveryNoteDetail');
 
-Route::get('/pembelian/delivery-note/{id}/details',
-    [InvoiceController::class, 'getDeliveryNoteDetail']);
 
-Route::get('/penjualan/delivery-note/{id}/details',
-    [InvoiceController::class, 'getDeliveryNoteDetail']);
+// PENJUALAN
+// Route::prefix('penjualan')->name('penjualan.')->group(function () {
+//     Route::get('invoice', [InvoiceController::class, 'index'])
+//         ->defaults('type', 'penjualan')
+//         ->name('invoice.index');
 
-require __DIR__.'/auth.php';
+//     Route::get('invoice/create', [InvoiceController::class, 'create'])
+//         ->defaults('type', 'penjualan')
+//         ->name('invoice.create');
+// });
+
+// // PEMBELIAN
+// Route::prefix('pembelian')->name('pembelian.')->group(function () {
+//     Route::get('invoice', [InvoiceController::class, 'index'])
+//         ->defaults('type', 'pembelian')
+//         ->name('invoice.index');
+
+//     Route::get('invoice/create', [InvoiceController::class, 'create'])
+//         ->defaults('type', 'pembelian')
+//         ->name('invoice.create');
+
+// });
+
+// Route::prefix('pembelian')->name('pembelian.')->group(function () {
+//     Route::resource('invoice', InvoiceController::class);
+// });
+
+//modal ROUTEE
+
+
+
+
+
+
+Route::get(
+    '/pembelian/delivery-note/{id}/details',
+    [InvoiceController::class, 'getDeliveryNoteDetail']
+);
+
+Route::get(
+    '/penjualan/delivery-note/{id}/details',
+    [InvoiceController::class, 'getDeliveryNoteDetail']
+);
+
+require __DIR__ . '/auth.php';
