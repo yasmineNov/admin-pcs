@@ -223,13 +223,13 @@
     </a> 
 </li> 
 
-                        {{-- <li class="nav-item">
-                            <a href="{{ route('penjualan.invoice.index') }}"
+                        <li class="nav-item">
+                            <a href="{{ route('penjualan.data-penjualan.index') }}"
                                 class="nav-link {{ request()->is('penjualan/data-penjualan*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-cash-register"></i>
                                 <p>Data Penjualan</p>
                             </a>
-                        </li> --}}
+                        </li>
 
                         {{-- <li class="nav-item">
                             <a href="{{ route('penjualan.invoice.index') }}"

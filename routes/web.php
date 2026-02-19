@@ -190,6 +190,15 @@ Route::get('/pembelian/data-pembelian/print',[InvoiceController::class, 'printPe
 
 /*
 |--------------------------------------------------------------------------
+| DATA PEMBELIAN
+|--------------------------------------------------------------------------
+*/
+Route::get('/penjualan/data-penjualan', [InvoiceController::class, 'dataPenjualan'])->name('penjualan.data-penjualan.index');
+Route::get('/penjualan/data-penjualan/export',[InvoiceController::class, 'exportPenjualan'])->name('penjualan.data-penjualan.export');
+Route::get('/penjualan/data-penjualan/print',[InvoiceController::class, 'printPenjualan'])->name('penjualan.data-penjualan.print');
+
+/*
+|--------------------------------------------------------------------------
 | AJAX
 |--------------------------------------------------------------------------
 */
