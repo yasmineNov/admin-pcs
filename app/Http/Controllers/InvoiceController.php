@@ -39,16 +39,9 @@ class InvoiceController extends Controller
         return view('penjualan.invoice.index', compact('invoices'));
     }
 
-    public function dataPembelian(Request $request)
-    {
-        $query = Invoice::with([
-            'supplier',
-            'details.orderDetail'
-        ])->where('type', Invoice::TYPE_MASUK);
     // ===========================
     // DATA PEMBELIAN
     // ===========================
-    }
 
 public function dataPembelian(Request $request)
 {
@@ -82,66 +75,7 @@ public function dataPembelian(Request $request)
         ));
     }
 
-    public function exportPembelian(Request $request)
-    {
-        $invoices = Invoice::with('supplier')
-            ->where('type', Invoice::TYPE_MASUK)
-            ->get();
 
-        $filename = "laporan_pembelian.xls";
-
-        $headers = [
-            "Content-Type" => "application/vnd.ms-excel",
-            "Content-Disposition" => "attachment; filename=$filename",
-        ];
-
-        return response()->view(
-            'pembelian.data-pembelian.excel',
-            compact('invoices'),
-            200,
-            $headers
-        );
-    }
-    public function printPembelian(Request $request)
-    {
-        $query = Invoice::with('supplier')
-            ->where('type', Invoice::TYPE_MASUK);
-
-        if ($request->filled('from') && $request->filled('to')) {
-            $query->whereBetween('tgl', [$request->from, $request->to]);
-        }
-
-        if ($request->filled('supplier_id')) {
-            $query->where('supplier_id', $request->supplier_id);
-        }
-
-        $invoices = $query->latest()->get();
-
-        $totalDpp = $invoices->sum('dpp');
-        $totalPpn = $invoices->sum('ppn');
-        $grandTotal = $invoices->sum('grand_total');
-
-        return view('pembelian.data-pembelian.print', compact(
-            'invoices',
-            'totalDpp',
-            'totalPpn',
-            'grandTotal'
-        ));
-    }
-
-    $invoices = $query->latest()->get();
-
-    $totalDpp = $invoices->sum('dpp');
-    $totalPpn = $invoices->sum('ppn');
-    $grandTotal = $invoices->sum('grand_total');
-
-    return view('pembelian.data-pembelian.print', compact(
-        'invoices',
-        'totalDpp',
-        'totalPpn',
-        'grandTotal'
-    ));
-}
 
  // ===========================
     // DATA PENJUALAN
