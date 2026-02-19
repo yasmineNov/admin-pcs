@@ -9,6 +9,7 @@ class DeliveryNoteDetail extends Model
     protected $fillable = [
     'delivery_note_id',
     'order_detail_id',
+    'qty',
     'keterangan'
 ];
 

@@ -114,12 +114,13 @@ class DeliveryNoteController extends Controller
             'alamat_kirim' => 'required',
             'order_id' => 'nullable|exists:orders,id',
             'details.*.order_detail_id' => 'required|exists:order_details,id',
+            'details.*.qty' => 'required|integer|min:1',
             'details.*.keterangan' => 'nullable|string'
         ]);
 
         $deliveryNote = DeliveryNote::create([
             'no' => $request->no,
-            'type' => $type, // masuk/keluar
+            'type' => $type,
             'tgl' => $request->tgl,
             'order_id' => $request->order_id,
             'keterangan' => $request->keterangan,
@@ -127,25 +128,43 @@ class DeliveryNoteController extends Controller
         ]);
 
         foreach ($request->details as $item) {
+
+            $orderDetail = OrderDetail::findOrFail($item['order_detail_id']);
+
+            // 🔥 Validasi manual supaya tidak melebihi qty PO
+            if ($item['qty'] > $orderDetail->qty) {
+                return back()->withErrors([
+                    'qty' => 'Qty kirim tidak boleh melebihi Qty PO'
+                ])->withInput();
+            }
+
             $detail = DeliveryNoteDetail::create([
                 'delivery_note_id' => $deliveryNote->id,
                 'order_detail_id' => $item['order_detail_id'],
+                'qty' => $item['qty'], // ✅ SIMPAN QTY KIRIM
                 'keterangan' => $item['keterangan'] ?? null
             ]);
 
-            // Update stok otomatis
-            $barang = $detail->orderDetail->barang;
+            // 🔥 Update stok pakai qty kirim
+            $barang = $orderDetail->barang;
+
             if ($type == 'masuk') {
-                $barang->stok += $detail->orderDetail->qty;
+                $barang->stok += $item['qty'];
             } else {
-                $barang->stok -= $detail->orderDetail->qty;
+                $barang->stok -= $item['qty'];
             }
+
             $barang->save();
         }
 
-        $route = $type == 'masuk' ? 'pembelian.delivery-note.index' : 'penjualan.delivery-note.index';
-        return redirect()->route($route)->with('success', 'Delivery Note berhasil dibuat.');
+        $route = $type == 'masuk'
+            ? 'pembelian.delivery-note.index'
+            : 'penjualan.delivery-note.index';
+
+        return redirect()->route($route)
+            ->with('success', 'Delivery Note berhasil dibuat.');
     }
+
 
     // ===========================
     // EDIT
