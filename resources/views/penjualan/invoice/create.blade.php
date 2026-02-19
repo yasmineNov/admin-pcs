@@ -9,11 +9,23 @@
     <!-- Pastikan route store sesuai controller -->
     <form action="{{ route('penjualan.invoice.store') }}" method="POST" id="invoiceForm">
         @csrf
+        @if ($errors->any())
+    <div class="alert alert-danger">
+        <strong>Error:</strong>
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
         <div class="card-body">
             <div class="row mb-2">
                 <div class="col-md-2">
                     <label>No. Invoice</label>
-                    <input type="text" name="no" class="form-control" value="{{ generateDocumentNumber('invoices','INV') }}" readonly style="background-color: #e9ecef;">
+                    <input type="text" name="no" class="form-control" required style="background-color: #e9ecef;">
+                    {{-- <input type="text" name="no" class="form-control" value="{{ generateDocumentNumber('invoices','INV') }}" readonly style="background-color: #e9ecef;"> --}}
                 </div>
 
                 <div class="col-md-2">

@@ -9,8 +9,8 @@ use App\Models\orders;
 class Invoice extends Model
 {
 
-    const TYPE_MASUK = 'masuk';
-    const TYPE_KELUAR = 'keluar';
+    const TYPE_MASUK = 'in';
+    const TYPE_KELUAR = 'out';
     protected $fillable = [
         'no',
         'no_so',
