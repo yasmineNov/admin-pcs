@@ -3,10 +3,12 @@
 @section('content')
 <div class="card">
     <div class="card-header bg-dark text-white">
-        <h4>Daftar Invoice Penjualan</h4>
-        <a href="{{ route('penjualan.invoice.create') }}" class="btn btn-primary mb-3">
+        <div class="d-flex justify-content-between">
+        <h4 class="mb-2">Daftar Invoice Penjualan</h4>
+        <a href="{{ route('penjualan.invoice.create') }}" class="btn btn-primary mb-2">
         + Buat Invoice Keluar
     </a>
+        </div>
     </div>
     <div class="card-body">
         <table class="table table-bordered table-striped">

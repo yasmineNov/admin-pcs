@@ -9,6 +9,7 @@ use App\Models\OrderDetail;
 use App\Models\Barang;
 use App\Models\DeliveryNote;
 use App\Models\DeliveryNoteDetail;
+use Illuminate\Support\Facades\DB;
 
 class InvoiceController extends Controller
 {
@@ -94,8 +95,9 @@ class InvoiceController extends Controller
             'ppn' => $ppn,
             'grand_total' => $total,
             'status' => 'unpaid',
-            'type' => 'in',
-        ]);
+            'paid' => 0,
+            'type' => Invoice::TYPE_MASUK,
+        ]);      
 
         foreach($request->details as $item){
             $invoice->details()->create([
@@ -109,27 +111,46 @@ class InvoiceController extends Controller
     }
 
     public function storeKeluar(Request $request)
-    {
-        $request->validate([
-            'no' => 'required|unique:invoices,no',
-            'tgl' => 'required|date',
-            'jatuh_tempo' => 'required|date',
-            'delivery_note_id' => 'required|exists:delivery_notes,id',
-            'details.*.order_detail_id' => 'required|exists:order_details,id',
-            'details.*.qty' => 'required|numeric|min:1',
-            'details.*.harga' => 'required|numeric|min:0',
-        ]);
+{
+    $request->validate([
+        'tgl' => 'required|date',
+        'jatuh_tempo' => 'required|date',
+        'delivery_note_id' => 'required|exists:delivery_notes,id',
+        'details' => 'required|array|min:1',
+        'details.*.order_detail_id' => 'required|exists:order_details,id',
+        'details.*.qty' => 'required|numeric|min:1',
+        'details.*.harga' => 'required|numeric|min:0',
+    ]);
 
-        $dn = DeliveryNote::with('order.customer')->findOrFail($request->delivery_note_id);
+    DB::beginTransaction();
+
+    try {
+
+        // Ambil delivery note + customer
+        $dn = DeliveryNote::with('order.customer')
+                ->findOrFail($request->delivery_note_id);
+
         $customer_id = $dn->order->customer->id ?? null;
         $no_so = $dn->order->no ?? null;
 
-        $dpp = collect($request->details)->sum(fn($item) => $item['qty'] * $item['harga']);
-        $pajak = $dpp * 0.11;
-        $total = $dpp + $pajak;
+        if (!$customer_id) {
+            throw new \Exception('Customer tidak ditemukan pada Delivery Note.');
+        }
 
+        // Hitung DPP dari detail
+        $dpp = collect($request->details)->sum(function ($item) {
+            return $item['qty'] * $item['harga'];
+        });
+
+        $ppn = $dpp * 0.11;
+        $grand_total = $dpp + $ppn;
+
+        // Generate nomor invoice di sini (lebih aman)
+        $invoiceNumber = generateDocumentNumber('invoices', 'INV');
+
+        // Simpan invoice
         $invoice = Invoice::create([
-            'no' => $request->no,
+            'no' => $invoiceNumber,
             'no_so' => $no_so,
             'tgl' => $request->tgl,
             'jatuh_tempo' => $request->jatuh_tempo,
@@ -137,22 +158,39 @@ class InvoiceController extends Controller
             'customer_id' => $customer_id,
             'supplier_id' => null,
             'dpp' => $dpp,
-            'ppn' => $pajak,
-            'grand_total' => $total,
+            'ppn' => $ppn,
+            'grand_total' => $grand_total,
             'status' => 'unpaid',
-            'type' => 'out',
+            'paid' => 0,
+            'type' => Invoice::TYPE_KELUAR,
         ]);
 
-        foreach($request->details as $item){
+        // Simpan detail
+        foreach ($request->details as $item) {
+
             $invoice->details()->create([
                 'order_detail_id' => $item['order_detail_id'],
                 'subtotal' => $item['qty'] * $item['harga'],
             ]);
+
         }
 
-        return redirect()->route('penjualan.invoice.index')
-            ->with('success','Invoice berhasil dibuat.');
+        DB::commit();
+
+        return redirect()
+            ->route('penjualan.invoice.index')
+            ->with('success', 'Invoice berhasil dibuat.');
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return back()
+            ->withErrors($e->getMessage())
+            ->withInput();
     }
+}
+
 
     // ===========================
     // EDIT
