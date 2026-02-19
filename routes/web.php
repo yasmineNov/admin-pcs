@@ -162,7 +162,7 @@ Route::prefix('pembelian/invoice')
         Route::post('/', [InvoiceController::class, 'storeMasuk'])->name('store');
     });
 
-
+Route::get('/invPurchase/{id}/detail', [InvoiceController::class, 'detailPurchase']);
 /*
 |--------------------------------------------------------------------------
 | INVOICE PENJUALAN (KELUAR)
@@ -177,6 +177,7 @@ Route::prefix('penjualan/invoice')
         Route::post('/', [InvoiceController::class, 'storeKeluar'])->name('store');
     });
 
+Route::get('/invSales/{id}/detail', [InvoiceController::class, 'detailSales']);
 
 /*
 |--------------------------------------------------------------------------

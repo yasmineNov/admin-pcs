@@ -12,20 +12,23 @@ class DeliveryNoteDetail extends Model
     'keterangan'
 ];
 
-public function deliveryNote()
-{
-    return $this->belongsTo(DeliveryNote::class);
-}
-
 public function orderDetail()
 {
-    return $this->belongsTo(OrderDetail::class);
+    return $this->belongsTo(OrderDetail::class, 'order_detail_id');
+}
+
+public function deliveryNote()
+{
+    return $this->belongsTo(DeliveryNote::class, 'delivery_note_id');
 }
 
 public function barang()
 {
     return $this->belongsTo(Barang::class);
 }
+
+
+
 
 
 }
