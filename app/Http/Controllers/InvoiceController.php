@@ -45,6 +45,17 @@ class InvoiceController extends Controller
             'supplier',
             'details.orderDetail'
         ])->where('type', Invoice::TYPE_MASUK);
+    // ===========================
+    // DATA PEMBELIAN
+    // ===========================
+    }
+
+public function dataPembelian(Request $request)
+{
+    $query = Invoice::with([
+        'supplier',
+        'details.orderDetail'
+    ])->where('type', Invoice::TYPE_MASUK);
 
         // Filter tanggal
         if ($request->from && $request->to) {
@@ -117,6 +128,111 @@ class InvoiceController extends Controller
             'grandTotal'
         ));
     }
+
+    $invoices = $query->latest()->get();
+
+    $totalDpp = $invoices->sum('dpp');
+    $totalPpn = $invoices->sum('ppn');
+    $grandTotal = $invoices->sum('grand_total');
+
+    return view('pembelian.data-pembelian.print', compact(
+        'invoices',
+        'totalDpp',
+        'totalPpn',
+        'grandTotal'
+    ));
+}
+
+ // ===========================
+    // DATA PENJUALAN
+    // ===========================
+
+    public function dataPenjualan(Request $request)
+{
+    $query = Invoice::with([
+        'customer',
+        'details.orderDetail'
+    ])->where('type', Invoice::TYPE_KELUAR);
+
+    if ($request->filled('from') && $request->filled('to')) {
+        $query->whereBetween('tgl', [$request->from, $request->to]);
+    }
+
+    if ($request->filled('customer_id')) {
+        $query->where('customer_id', $request->customer_id);
+    }
+
+    $invoices = $query->latest()->get();
+
+    $totalDpp = $invoices->sum('dpp');
+    $totalPpn = $invoices->sum('ppn');
+    $grandTotal = $invoices->sum('grand_total');
+
+    $customers = \App\Models\Customer::all();
+
+    return view('penjualan.data-penjualan.index', compact(
+        'invoices',
+        'totalDpp',
+        'totalPpn',
+        'grandTotal',
+        'customers'
+    ));
+}
+public function exportPenjualan(Request $request)
+{
+    $query = Invoice::with('customer')
+        ->where('type', Invoice::TYPE_KELUAR);
+
+    if ($request->filled('from') && $request->filled('to')) {
+        $query->whereBetween('tgl', [$request->from, $request->to]);
+    }
+
+    if ($request->filled('customer_id')) {
+        $query->where('customer_id', $request->customer_id);
+    }
+
+    $invoices = $query->get();
+
+    $filename = "laporan_penjualan.xls";
+
+    $headers = [
+        "Content-Type" => "application/vnd.ms-excel",
+        "Content-Disposition" => "attachment; filename=$filename",
+    ];
+
+    return response()->view(
+        'penjualan.data-penjualan.excel',
+        compact('invoices'),
+        200,
+        $headers
+    );
+}
+public function printPenjualan(Request $request)
+{
+    $query = Invoice::with('customer')
+        ->where('type', Invoice::TYPE_KELUAR);
+
+    if ($request->filled('from') && $request->filled('to')) {
+        $query->whereBetween('tgl', [$request->from, $request->to]);
+    }
+
+    if ($request->filled('customer_id')) {
+        $query->where('customer_id', $request->customer_id);
+    }
+
+    $invoices = $query->latest()->get();
+
+    $totalDpp = $invoices->sum('dpp');
+    $totalPpn = $invoices->sum('ppn');
+    $grandTotal = $invoices->sum('grand_total');
+
+    return view('penjualan.data-penjualan.print', compact(
+        'invoices',
+        'totalDpp',
+        'totalPpn',
+        'grandTotal'
+    ));
+}
 
 
     // ===========================

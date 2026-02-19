@@ -1,103 +1,109 @@
 @extends('layouts.admin')
 
 @section('content')
-<h3> Data Penjualan </h3>
-
-<div class="container-fluid">
-
-
-{{-- <h4 class="mb-3">Data Penjualan</h4> --}}
-
-<div class="card mb-4">
-<div class="card-body">
-<table class="table table-bordered table-striped">
-<thead class="thead-dark">
-<tr>
-<th>No</th>
-<th>Tgl Faktur</th>
-<th>No Faktur</th>
-<th>No PO</th>
-<th>No SJ</th>
-<th>Customer</th>
-<th>Total</th>
-<th>Terbayar</th>
-<th>Sisa</th>
-</tr>
-</thead>
-<tbody>
-@foreach($data as $i => $row)
-<tr>
-<td>{{ $i+1 }}</td>
-<td>{{ $row->tgl_faktur }}</td>
-<td>{{ $row->no_faktur }}</td>
-<td>{{ $row->no_po }}</td>
-<td>{{ optional($row->suratJalan)->no_sj }}</td>
-<td>{{ $row->customer->nama_customer }}</td>
-<td>{{ number_format($row->total) }}</td>
-<td>{{ number_format($row->terbayar) }}</td>
-<td>{{ number_format($row->sisa) }}</td>
-</tr>
-@endforeach
-</tbody>
-</table>
-</div>
-</div>
-
 <div class="card">
-<div class="card-header">Pelunasan Faktur Penjualan</div>
-<div class="card-body">
-<form method="POST" action="{{ route('penjualan.pelunasan') }}">
-@csrf
+    <div class="card-header bg-dark text-white">
+        <div class="d-flex justify-content-between">
+        <h4 class="mb-2">Data Penjualan</h4>
+        <div>
+        <a href="{{ route('penjualan.data-penjualan.export', request()->query()) }}"
+   class="btn btn-success">
+   Export Excel
+</a>
+<a href="{{ route('penjualan.data-penjualan.print', request()->query()) }}"
+   target="_blank"
+   class="btn btn-primary">
+   Print
+</a>
+        </div>
 
-
-<div class="row">
-<div class="col-md-3">
-<label>Tgl Pelunasan</label>
-<input type="date" name="tgl_pelunasan" class="form-control" required>
 </div>
+    </div>
 
+    <div class="card-body">
+        {{-- FILTER --}}
+        <form method="GET" class="mb-3">
+    <div class="row align-items-end">
 
-<div class="col-md-3">
-<label>Faktur</label>
-<select name="faktur_id" class="form-control" required>
-<option value="">- pilih -</option>
-@foreach($data as $f)
-@if($f->sisa > 0)
-<option value="{{ $f->id }}">{{ $f->no_faktur }} - {{ $f->customer->nama_customer }}</option>
-@endif
-@endforeach
+        <div class="col-md-3">
+            <label>Dari Tanggal</label>
+            <input type="date" name="from"
+                   value="{{ request('from') }}"
+                   class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label>Sampai Tanggal</label>
+            <input type="date" name="to"
+                   value="{{ request('to') }}"
+                   class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label>Supplier</label>
+            <select name="customer_id" class="form-control">
+    <option value="">-- Semua Customer --</option>
+    @foreach($customers as $customer)
+        <option value="{{ $customer->id }}"
+            {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
+            {{ $customer->nama_customer }}
+        </option>
+    @endforeach
 </select>
-</div>
 
+        </div>
 
-<div class="col-md-2">
-<label>Bayar</label>
-<input type="number" name="bayar" class="form-control" required>
-</div>
+        <div class="col-md-3">
+            <button class="btn btn-primary">Filter</button>
+            <a href="{{ route('penjualan.data-penjualan.index') }}"
+               class="btn btn-secondary">
+               Reset
+            </a>
+        </div>
 
-
-<div class="col-md-2">
-<label>Metode</label>
-<select name="metode" class="form-control">
-<option value="cash">Cash</option>
-<option value="transfer">Transfer</option>
-</select>
-</div>
-
-
-<div class="col-md-2">
-<label>Bank</label>
-<input type="text" name="bank" class="form-control">
-</div>
-</div>
-
-
-<button class="btn btn-primary mt-3">Simpan Pelunasan</button>
+    </div>
 </form>
+{{-- END FILTER --}}
+        <table class="table table-bordered table-striped">
+            <thead class="bg-secondary text-white">
+                <tr>
+                    <th>No</th>
+                    <th>No. Inv</th>
+                    <th>Tgl Invoice</th>
+                    <th>Nama Customer</th>
+                    <th>DPP</th>
+                    <th>PPN</th>
+                    <th>Total</th>
+                    <th>Qty</th>
+                    <th>Keterangan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($invoices as $index => $inv)
+                    <tr>
+                        <td>{{ $index + 1 }}</td>
+                        <td>{{ $inv->no }}</td>
+                        <td>{{ $inv->tgl->format('d-m-Y') }}</td>
+                        <td>{{ $inv->customer->nama_customer ?? '-' }}</td>
+                        <td>{{ number_format($inv->dpp,0,',','.') }}</td>
+                        <td>{{ number_format($inv->ppn,0,',','.') }}</td>
+                        <td>{{ number_format($inv->grand_total,0,',','.') }}</td>
+                        <td>
+                            {{ 
+                                $inv->details->sum(function($d){
+                                    return $d->orderDetail->qty ?? 0;
+                                })
+                            }}
+                        </td>
+                        <td>{{ $inv->keterangan ?? '-' }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="9" class="text-center">Tidak ada data</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 </div>
-</div>
-
-
-</div>
-
 @endsection
