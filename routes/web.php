@@ -167,6 +167,17 @@ Route::prefix('penjualan/invoice')
         Route::post('/', [InvoiceController::class, 'storeKeluar'])->name('store');
 });
 
+
+/*
+|--------------------------------------------------------------------------
+| DATA PEMBELIAN
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/pembelian/data-pembelian',[InvoiceController::class, 'dataPembelian'])->name('pembelian.data-pembelian.index');
+Route::get('/pembelian/data-pembelian/export',[InvoiceController::class, 'exportPembelian'])->name('pembelian.data-pembelian.export');
+Route::get('/pembelian/data-pembelian/print',[InvoiceController::class, 'printPembelian'])->name('pembelian.data-pembelian.print');
+
 /*
 |--------------------------------------------------------------------------
 | AJAX

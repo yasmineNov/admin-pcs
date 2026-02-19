@@ -174,13 +174,13 @@
     </a> 
 </li> 
 
-                        {{-- <li class="nav-item">
-                            <a href="{{ route('pembelian.invoice.index') }}"
+                        <li class="nav-item">
+                            <a href="{{ route('pembelian.data-pembelian.index') }}"
                                 class="nav-link {{ request()->is('pembelian/data-pembelian*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-shopping-cart"></i>
                                 <p>Data Pembelian</p>
                             </a>
-                        </li> --}}
+                        </li>
 
                         {{-- <li class="nav-item">
                             <a href="{{ route('pembelian.invoice.index') }}"
