@@ -96,7 +96,7 @@
                             <a href="{{ route('banks.index') }}" 
                                 class="nav-link {{ request()->is('banks*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-university"></i>
-                            <p>Master Bank</p>
+                            <p>Bank</p>
                             </a>
                         </li>
                     </ul>

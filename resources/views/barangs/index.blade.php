@@ -5,7 +5,7 @@
     <div class="card-header">
         <div class="d-flex justify-content-between">
             <h2>Master Barang</h2>
-            <a href="{{ route('barangs.create') }}" class="btn btn-primary mb-2">
+            <a href="{{ route('barang.create') }}" class="btn btn-primary mb-2">
                  + Tambah Barang
             </a>
         </div>
@@ -29,10 +29,10 @@
                     <td>{{ $b->supplier->nama_supplier ?? '-' }}</td>
                     <td>{{ $b->stok }} roll</td>
                     <td>
-                        <a href="{{ route('barangs.edit',$b->id) }}"
+                        <a href="{{ route('barang.edit',$b->id) }}"
                            class="btn btn-warning btn-sm">Edit</a>
 
-                        <form action="{{ route('barangs.destroy',$b->id) }}"
+                        <form action="{{ route('barang.destroy',$b->id) }}"
                               method="POST"
                               style="display:inline">
                             @csrf

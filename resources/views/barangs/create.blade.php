@@ -6,7 +6,7 @@
         <h5>Tambah Barang</h5>
     </div>
 
-    <form action="{{ route('barangs.store') }}" method="POST">
+    <form action="{{ route('barang.store') }}" method="POST">
         @csrf
         <div class="card-body">
             <div class="form-group">
@@ -44,7 +44,7 @@
 
         <div class="card-footer">
             <button class="btn btn-primary">Simpan</button>
-            <a href="{{ route('barangs.index') }}" class="btn btn-secondary">
+            <a href="{{ route('barang.index') }}" class="btn btn-secondary">
                 Kembali
             </a>
         </div>

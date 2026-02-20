@@ -47,7 +47,7 @@ class BarangController extends Controller
         'stok'        => $request->stok,
     ]);
 
-    return redirect()->route('barangs.index')
+    return redirect()->route('barang.index')
         ->with('success', 'Barang berhasil ditambahkan');
 }
 
