@@ -32,7 +32,7 @@
         @foreach($dn->details as $detail)
             <tr>
                 <td>{{ $detail->orderDetail?->barang?->nama_barang ?? '-' }}</td>
-                <td>{{ $detail->orderDetail?->qty ?? 0 }}</td>
+                <td>{{ $detail->qty }}</td>
             </tr>
         @endforeach
     </tbody>
