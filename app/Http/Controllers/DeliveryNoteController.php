@@ -131,21 +131,27 @@ class DeliveryNoteController extends Controller
 
             $orderDetail = OrderDetail::findOrFail($item['order_detail_id']);
 
-            // 🔥 Validasi manual supaya tidak melebihi qty PO
-            if ($item['qty'] > $orderDetail->qty) {
+            // 🔥 Hitung sisa yang boleh dikirim
+            $sisaQty = $orderDetail->qty - $orderDetail->qty_sent;
+
+            if ($item['qty'] > $sisaQty) {
                 return back()->withErrors([
-                    'qty' => 'Qty kirim tidak boleh melebihi Qty PO'
+                    'qty' => 'Qty kirim melebihi sisa yang belum dikirim'
                 ])->withInput();
             }
 
             $detail = DeliveryNoteDetail::create([
                 'delivery_note_id' => $deliveryNote->id,
                 'order_detail_id' => $item['order_detail_id'],
-                'qty' => $item['qty'], // ✅ SIMPAN QTY KIRIM
+                'qty' => $item['qty'],
                 'keterangan' => $item['keterangan'] ?? null
             ]);
 
-            // 🔥 Update stok pakai qty kirim
+            // 🔥 Update qty_sent
+            $orderDetail->qty_sent += $item['qty'];
+            $orderDetail->save();
+
+            // 🔥 Update stok
             $barang = $orderDetail->barang;
 
             if ($type == 'masuk') {
@@ -320,6 +326,15 @@ class DeliveryNoteController extends Controller
         ])->findOrFail($id);
 
         return view('penjualan.surat-jalan.detail', compact('dn'));
+    }
+
+    //ADDITIONAL
+    public function getOrderDetails($id)
+    {
+        $order = Orders::with('details.barang')
+            ->findOrFail($id);
+
+        return response()->json($order->details);
     }
 
 }

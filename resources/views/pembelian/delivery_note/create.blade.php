@@ -55,19 +55,11 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
+                    {{-- <tr>
                         <td>
-                            <select name="details[0][order_detail_id]" class="form-control">
+                            <select name="details[0][order_detail_id]" class="form-control order-detail-select">
                                 <option value="">-- Pilih Barang --</option>
-                                @foreach($orders as $order)
-                                    @foreach($order->details as $detail)
-                                        <option value="{{ $detail->id }}" data-qty="{{ $detail->qty }}">
-                                            {{ $detail->barang->nama_barang }} (Qty PO: {{ $detail->qty }})
-                                        </option>
-                                    @endforeach
-                                @endforeach
                             </select>
-
                         <td>
                             <input type="number" name="details[0][qty]" class="form-control qty-input" min="1" value="1">
                         </td>
@@ -78,7 +70,7 @@
                             <input type="text" name="details[0][keterangan]" class="form-control">
                         </td>
                         <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">-</button></td>
-                    </tr>
+                    </tr> --}}
                 </tbody>
             </table>
         </div>
@@ -90,45 +82,90 @@
     </form>
 
     <script>
-        let rowIndex = 1;
+        let rowIndex = 0;
 
-        function addRow() {
-            let table = document.getElementById('detailTable').getElementsByTagName('tbody')[0];
-            let newRow = table.rows[0].cloneNode(true);
+        function addRow(detail = null) {
 
-            // Update name index
-            newRow.querySelectorAll('select, input').forEach(el => {
-                let name = el.getAttribute('name');
-                el.setAttribute('name', name.replace(/\d+/, rowIndex));
-                if (el.tagName == 'SELECT') el.selectedIndex = 0;
-                else el.value = '';
-            });
+            const tbody = document.querySelector('#detailTable tbody');
 
-            table.appendChild(newRow);
+            let row = document.createElement('tr');
+
+            row.innerHTML = `
+                    <td>
+                        <input type="hidden" name="details[${rowIndex}][order_detail_id]" value="${detail ? detail.id : ''}">
+                        <input type="text" class="form-control" value="${detail ? detail.barang.nama_barang : ''}" readonly>
+                    </td>
+
+                    <td>
+                        <input type="number" 
+                            name="details[${rowIndex}][qty]" 
+                            class="form-control qty-input" 
+                            min="1"
+                            max="${detail ? detail.sisa : ''}"
+                            value="${detail ? detail.sisa : 1}">
+                    </td>
+
+                    <td>
+                        <input type="text" name="details[${rowIndex}][keterangan]" class="form-control">
+                    </td>
+
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">-</button>
+                    </td>
+                `;
+
+            tbody.appendChild(row);
             rowIndex++;
         }
 
         function removeRow(btn) {
-            let table = document.getElementById('detailTable').getElementsByTagName('tbody')[0];
-            if (table.rows.length > 1) {
-                btn.closest('tr').remove();
-            } else {
-                alert('Minimal 1 barang harus ada.');
+            const tbody = document.querySelector('#detailTable tbody');
+
+            btn.closest('tr').remove();
+
+            if (tbody.rows.length === 0) {
+                rowIndex = 0;
             }
         }
-        document.addEventListener('change', function (e) {
-            if (e.target.matches('select[name^="details"]')) {
-                let selectedOption = e.target.selectedOptions[0];
-                let maxQty = selectedOption.dataset.qty;
 
-                let row = e.target.closest('tr');
-                let qtyInput = row.querySelector('.qty-input');
+        document.addEventListener('DOMContentLoaded', function () {
 
-                if (maxQty) {
-                    qtyInput.max = maxQty;
-                    qtyInput.value = Math.min(qtyInput.value, maxQty);
-                }
-            }
+            const orderSelect = document.querySelector('select[name="order_id"]');
+
+            orderSelect.addEventListener('change', function () {
+
+                const orderId = this.value;
+                const tbody = document.querySelector('#detailTable tbody');
+
+                tbody.innerHTML = '';
+                rowIndex = 0;
+
+                if (!orderId) return;
+
+                fetch(`/order/${orderId}/details`)
+                    .then(res => res.json())
+                    .then(data => {
+
+                        if (!data || data.length === 0) {
+                            console.log("Order detail kosong");
+                            return;
+                        }
+
+                        data.forEach(detail => {
+
+                            let sisa = detail.qty - detail.qty_sent;
+
+                            if (sisa > 0) {
+                                detail.sisa = sisa;
+                                addRow(detail);
+                            }
+
+                        });
+
+                    })
+                    .catch(err => console.log(err));
+            });
+
         });
     </script>
 @endsection

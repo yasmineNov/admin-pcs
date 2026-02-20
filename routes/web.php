@@ -84,6 +84,7 @@ Route::get(
     ->name('pembelian.purchase-order.detail');
 
 Route::get('/po/{id}', [OrdersController::class, 'showDetailPO']);
+
 /*
 |--------------------------------------------------------------------------
 | SALES ORDER
@@ -124,6 +125,8 @@ Route::prefix('pembelian/delivery-note')
         Route::get('/{deliveryNote}', [DeliveryNoteController::class, 'show'])->name('show');
     });
 Route::get('/dnpo/{id}', [DeliveryNoteController::class, 'showDetailPO']);
+Route::get('/order/{id}/details', [DeliveryNoteController::class, 'getOrderDetails']);
+
 
 
 /*
