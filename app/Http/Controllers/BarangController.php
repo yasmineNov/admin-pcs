@@ -50,9 +50,6 @@ class BarangController extends Controller
     return redirect()->route('barang.index')
         ->with('success', 'Barang berhasil ditambahkan');
 }
-
-
-
     /**
      * Display the specified resource.
      */

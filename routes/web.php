@@ -210,6 +210,14 @@ Route::get('/pembelian/hutang',[InvoiceController::class, 'laporanHutang'])->nam
 Route::get('/api/hutang/{supplierId}',[InvoiceController::class, 'getHutangDetail']);
 Route::post('/pembelian/hutang/bayar',[InvoiceController::class, 'bayarHutang'])->name('pembelian.hutang.bayar');
 
+/*
+|--------------------------------------------------------------------------
+| HUTANG
+|--------------------------------------------------------------------------
+*/
+Route::get('/penjualan/piutang',[InvoiceController::class, 'laporanPiutang'])->name('penjualan.piutang.index');
+Route::get('/api/piutang/{customerId}',[InvoiceController::class, 'getPiutangDetail']);
+Route::post('/penjualan/piutang/bayar',[InvoiceController::class, 'bayarPiutang'])->name('penjualan.piutang.bayar');
 
 /*
 |--------------------------------------------------------------------------

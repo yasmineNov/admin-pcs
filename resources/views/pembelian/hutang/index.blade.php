@@ -83,6 +83,18 @@
             </tbody>
         </table>
         <hr>
+@if(session('success'))
+<div class="alert alert-success">
+    {{ session('success') }}
+</div>
+@endif
+
+@if($errors->any())
+<div class="alert alert-danger">
+    {{ $errors->first() }}
+</div>
+@endif
+
 
 <h5>Pelunasan Hutang</h5>
 
@@ -116,9 +128,10 @@
 
         <div class="col-md-3">
             <label>&nbsp;</label>
-            <button class="btn btn-success form-control">
-                Bayar
-            </button>
+            <button type="submit" class="btn btn-success form-control">
+    Bayar
+</button>
+
         </div>
     </div>
 </form>

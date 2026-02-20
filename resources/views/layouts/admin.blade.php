@@ -231,13 +231,13 @@
                             </a>
                         </li>
 
-                        {{-- <li class="nav-item">
-                            <a href="{{ route('penjualan.invoice.index') }}"
+                        <li class="nav-item">
+                            <a href="{{ route('penjualan.piutang.index') }}"
                                 class="nav-link {{ request()->is('penjualan/piutang*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-hand-holding-usd"></i>
                                 <p>Piutang Customer</p>
                             </a>
-                        </li> --}}
+                        </li>
 
                     </ul>
                 </li>

@@ -10,7 +10,7 @@ use App\Models\Invoice;
 use App\Models\OrderDetail;
 use App\Models\Supplier;
 use App\Models\DeliveryNote;
-use App\Models\DeliveryNoteDetail;
+use App\Models\Customer;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -225,62 +225,210 @@ public function bayarHutang(Request $request)
     try {
 
         $supplierId = $request->supplier_id;
-        $sisaPembayaran = $request->jumlah_bayar;
+        $sisaUang = (int) $request->jumlah_bayar;
 
-        // Ambil semua invoice hutang supplier (urut paling lama)
-        $invoices = Invoice::where('supplier_id', $supplierId)
+        // Ambil invoice yg masih ada sisa, urut paling lama
+        $invoices = Invoice::with('paymentDetails')
+            ->where('supplier_id', $supplierId)
             ->where('type', Invoice::TYPE_MASUK)
             ->orderBy('tgl', 'asc')
             ->get();
+
+        // Hitung total sisa hutang
+        $totalSisa = 0;
+
+        foreach ($invoices as $inv) {
+            $paid = $inv->paymentDetails->sum('subtotal');
+            $kurang = $inv->grand_total - $paid;
+
+            if ($kurang > 0) {
+                $totalSisa += $kurang;
+            }
+        }
+
+        if ($sisaUang > $totalSisa) {
+            throw new \Exception('Jumlah bayar melebihi total hutang.');
+        }
 
         // Buat header payment
         $payment = Payment::create([
             'total' => $request->jumlah_bayar,
             'keterangan' => 'Pelunasan Hutang',
-            'type' => 'hutang',
+            'type' => 'out',
             'supplier_id' => $supplierId,
             'customer_id' => null,
         ]);
 
+        // ====== FIFO LOGIC ======
         foreach ($invoices as $invoice) {
 
-            if ($sisaPembayaran <= 0) break;
+            if ($sisaUang <= 0) break;
 
-            $sudahDibayar = $invoice->paymentDetails()->sum('subtotal');
+            $sudahDibayar = $invoice->paymentDetails->sum('subtotal');
             $kurang = $invoice->grand_total - $sudahDibayar;
 
             if ($kurang <= 0) continue;
 
-            if ($sisaPembayaran >= $kurang) {
-                // lunas
-                $bayar = $kurang;
-            } else {
-                // bayar sebagian
-                $bayar = $sisaPembayaran;
-            }
+            // bayar sebagian atau penuh
+            $bayar = min($sisaUang, $kurang);
 
-            // simpan detail pembayaran
             PaymentDetail::create([
                 'payment_id' => $payment->id,
                 'invoice_id' => $invoice->id,
                 'subtotal' => $bayar
             ]);
 
-            // update kolom paid di invoice
+            // update kolom paid
             $invoice->paid += $bayar;
 
             if ($invoice->paid >= $invoice->grand_total) {
                 $invoice->status = 'paid';
+            } else {
+                $invoice->status = 'partial';
             }
 
             $invoice->save();
 
-            $sisaPembayaran -= $bayar;
+            $sisaUang -= $bayar;
         }
 
         DB::commit();
 
         return back()->with('success', 'Pembayaran berhasil disimpan.');
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return back()->withErrors($e->getMessage());
+    }
+}
+
+    // ===========================
+    // LAPORAN PIUTANG
+    // ===========================
+
+    public function laporanPiutang()
+{
+    $customers = Customer::with([
+        'invoices' => function ($q) {
+            $q->where('type', 'out'); // invoice penjualan
+        },
+        'invoices.paymentDetails'
+    ])->get();
+
+    return view('penjualan.piutang.index', compact('customers'));
+}
+
+public function getPiutangDetail($customerId)
+{
+    $invoices = Invoice::with('paymentDetails')
+        ->where('customer_id', $customerId)
+        ->where('type', 'out') // invoice penjualan
+        ->orderBy('tgl', 'asc')
+        ->get();
+
+    $data = $invoices->map(function($inv){
+
+        $paid = $inv->paymentDetails->sum('subtotal');
+        $sisa = $inv->grand_total - $paid;
+
+        if($sisa <= 0) return null;
+
+        return [
+            'tgl' => $inv->tgl->format('d-m-Y'),
+            'no' => $inv->no,
+            'no_so' => $inv->no_so,
+            'jatuh_tempo' => optional($inv->jatuh_tempo)->format('d-m-Y'),
+            'total' => number_format($inv->grand_total,0,',','.'),
+            'paid' => number_format($paid,0,',','.'),
+            'sisa' => number_format($sisa,0,',','.')
+        ];
+    })->filter()->values();
+
+    return response()->json($data);
+}
+
+public function bayarPiutang(Request $request)
+{
+    $request->validate([
+        'customer_id' => 'required|exists:customers,id',
+        'jumlah_bayar' => 'required|numeric|min:1',
+        'metode' => 'required'
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+
+        $customerId = $request->customer_id;
+        $sisaUang = (int) $request->jumlah_bayar;
+
+        // Ambil invoice piutang (type out)
+        $invoices = Invoice::with('paymentDetails')
+            ->where('customer_id', $customerId)
+            ->where('type', 'out') // invoice penjualan
+            ->orderBy('tgl', 'asc')
+            ->get();
+
+        // Hitung total sisa piutang
+        $totalSisa = 0;
+
+        foreach ($invoices as $inv) {
+            $paid = $inv->paymentDetails->sum('subtotal');
+            $kurang = $inv->grand_total - $paid;
+
+            if ($kurang > 0) {
+                $totalSisa += $kurang;
+            }
+        }
+
+        if ($sisaUang > $totalSisa) {
+            throw new \Exception('Jumlah bayar melebihi total piutang.');
+        }
+
+        // Buat payment (uang masuk)
+        $payment = Payment::create([
+            'total' => $request->jumlah_bayar,
+            'keterangan' => 'Pelunasan Piutang',
+            'type' => 'in', // ✅ uang masuk
+            'customer_id' => $customerId,
+            'supplier_id' => null,
+        ]);
+
+        foreach ($invoices as $invoice) {
+
+            if ($sisaUang <= 0) break;
+
+            $sudahDibayar = $invoice->paymentDetails->sum('subtotal');
+            $kurang = $invoice->grand_total - $sudahDibayar;
+
+            if ($kurang <= 0) continue;
+
+            $bayar = min($sisaUang, $kurang);
+
+            PaymentDetail::create([
+                'payment_id' => $payment->id,
+                'invoice_id' => $invoice->id,
+                'subtotal' => $bayar
+            ]);
+
+            $invoice->paid += $bayar;
+
+            if ($invoice->paid >= $invoice->grand_total) {
+                $invoice->status = 'paid';
+            } else {
+                $invoice->status = 'partial';
+            }
+
+            $invoice->save();
+
+            $sisaUang -= $bayar;
+        }
+
+        DB::commit();
+
+        return back()->with('success', 'Pembayaran piutang berhasil disimpan.');
 
     } catch (\Exception $e) {
 
