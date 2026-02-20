@@ -756,7 +756,7 @@ public function bayarPiutang(Request $request)
             'barang_id' => $d->orderDetail->barang->id,
             'order_detail_id' => $d->orderDetail->id,
             'nama_barang' => $d->orderDetail->barang->nama_barang,
-            'qty' => $d->OrderDetail->qty, // pakai qty yang dikirim
+            'qty' => $d->qty, // pakai qty yang dikirim
             'harga' => $d->orderDetail->harga, // INI WAJIB
             'supplier_name' => $dn->order->supplier->nama_supplier ?? '',
             'customer_name' => $dn->order->customer->nama_customer ?? '',
