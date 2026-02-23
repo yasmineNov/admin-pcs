@@ -22,12 +22,11 @@
 
             <div class="card-body">
                 <div class="row mb-2">
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label>No. Invoice</label>
-                        <input type="text" name="no" class="form-control" required style="background-color: #e9ecef;">
-                        {{-- <input type="text" name="no" class="form-control"
-                            value="{{ generateDocumentNumber('invoices','INV') }}" readonly
-                            style="background-color: #e9ecef;"> --}}
+                        <input type="text" name="no" class="form-control"
+                            value="{{ generateDocumentNumber('invoices', 'PCS-INV') }}" readonly
+                            style="background-color: #e9ecef;">
                     </div>
 
                     <div class="col-md-2">
@@ -154,16 +153,16 @@
                         data.forEach(item => {
                             let row = document.createElement('tr');
                             row.innerHTML = `
-                                    <td>
-                                        ${item.nama_barang}
-                                        <input type="hidden" name="details[${rowIndex}][barang_id]" value="${item.barang_id}">
-                                        <input type="hidden" name="details[${rowIndex}][order_detail_id]" value="${item.order_detail_id}">
-                                    </td>
-                                    <td><input type="number" name="details[${rowIndex}][qty]" class="form-control qty" value="${item.qty}" readonly></td>
-                                    <td><input type="number" name="details[${rowIndex}][harga]" class="form-control harga" value="${item.harga}" readonly style="background-color:#e9ecef;"></td>
-                                    <td><input type="number" name="details[${rowIndex}][subtotal]" class="form-control subtotal-detail" readonly style="background-color:#e9ecef;"></td>
-                                    <td><button type="button" class="btn btn-danger btn-sm remove-row">-</button></td>
-                                `;
+                                        <td>
+                                            ${item.nama_barang}
+                                            <input type="hidden" name="details[${rowIndex}][barang_id]" value="${item.barang_id}">
+                                            <input type="hidden" name="details[${rowIndex}][order_detail_id]" value="${item.order_detail_id}">
+                                        </td>
+                                        <td><input type="number" name="details[${rowIndex}][qty]" class="form-control qty" value="${item.qty}" readonly></td>
+                                        <td><input type="number" name="details[${rowIndex}][harga]" class="form-control harga" value="${item.harga}" readonly style="background-color:#e9ecef;"></td>
+                                        <td><input type="number" name="details[${rowIndex}][subtotal]" class="form-control subtotal-detail" readonly style="background-color:#e9ecef;"></td>
+                                        <td><button type="button" class="btn btn-danger btn-sm remove-row">-</button></td>
+                                    `;
                             itemsTable.appendChild(row);
                             calculateRow(row);
                             rowIndex++;

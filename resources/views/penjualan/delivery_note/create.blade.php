@@ -8,8 +8,10 @@
         <div class="card-body">
             <div class="row mb-3">
                 <div class="col-md-3">
-                    <label>No Surat Jalan</label>
-                    <input type="text" name="no" class="form-control" required>
+                    <label>No. Invoice</label>
+                    <input type="text" name="no" class="form-control"
+                        value="{{ generateDocumentNumber('delivery_notes', 'PCS-SJ') }}" 
+                        style="background-color: #e9ecef;">
                 </div>
 
                 <div class="col-md-3">
@@ -79,28 +81,28 @@
             let row = document.createElement('tr');
 
             row.innerHTML = `
-                <td>
-                    <input type="hidden" name="details[${rowIndex}][order_detail_id]" value="${detail ? detail.id : ''}">
-                    <input type="text" class="form-control" value="${detail ? detail.barang.nama_barang : ''}" readonly>
-                </td>
+                    <td>
+                        <input type="hidden" name="details[${rowIndex}][order_detail_id]" value="${detail ? detail.id : ''}">
+                        <input type="text" class="form-control" value="${detail ? detail.barang.nama_barang : ''}" readonly>
+                    </td>
 
-                <td>
-                    <input type="number" 
-                        name="details[${rowIndex}][qty]" 
-                        class="form-control qty-input" 
-                        min="1"
-                        max="${detail ? detail.sisa : ''}"
-                        value="${detail ? detail.sisa : 1}">
-                </td>
+                    <td>
+                        <input type="number" 
+                            name="details[${rowIndex}][qty]" 
+                            class="form-control qty-input" 
+                            min="1"
+                            max="${detail ? detail.sisa : ''}"
+                            value="${detail ? detail.sisa : 1}">
+                    </td>
 
-                <td>
-                    <input type="text" name="details[${rowIndex}][keterangan]" class="form-control">
-                </td>
+                    <td>
+                        <input type="text" name="details[${rowIndex}][keterangan]" class="form-control">
+                    </td>
 
-                <td>
-                    <button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">-</button>
-                </td>
-            `;
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">-</button>
+                    </td>
+                `;
 
             tbody.appendChild(row);
             rowIndex++;

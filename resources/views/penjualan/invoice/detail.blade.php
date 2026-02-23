@@ -49,7 +49,7 @@
         @foreach($invoice->deliveryNote->details as $detail)
             @php
                 $harga = $detail->orderDetail->harga ?? 0;
-                $qty = $detail->orderDetail->qty ?? 0;
+                $qty = $detail->qty ?? 0;
                 $lineTotal = $qty * $harga;
                 $subtotal += $lineTotal;
             @endphp

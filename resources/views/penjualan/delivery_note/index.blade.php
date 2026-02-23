@@ -27,7 +27,7 @@
                         {{-- <td>{{ $dn->order?->customer?->nama ?? '-' }}</td> --}}
                         <td>{{ $dn->order?->customer?->nama_customer ?? '-' }}</td>
 
-                        <td>{{ $dn->details->sum(fn($d) => $d->orderDetail->qty) }}</td>
+                        <td>{{ $dn->details->sum('qty') }}</td>
                         <td>
                             <button class="btn btn-sm btn-primary btn-detail" data-id="{{ $dn->id }}">
                                 Detail
