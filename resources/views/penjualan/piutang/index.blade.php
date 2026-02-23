@@ -38,7 +38,8 @@
                     @endphp
 
                     @if($sisa > 0)
-                    <tr class="customer-row" data-id="{{ $customer->id }}">
+                    {{-- <tr class="customer-row" data-id="{{ $customer->id }}"> --}}
+                    <tr class="customer-row" data-id="{{ $customer->id }}" data-sisa="{{ $sisa }}">
                         <td>{{ $i+1 }}</td>
                         <td>{{ $customer->nama_customer }}</td>
                         <td>{{ number_format($total,0,',','.') }}</td>
@@ -142,13 +143,61 @@
 
 
 @section('scripts')
+<style>
+.customer-row.active {
+    background-color: #d1ecf1 !important;
+    cursor: pointer;
+}
+.invoice-row.active {
+    background-color: #ffeeba !important;
+    cursor: pointer;
+}
+.customer-row, .invoice-row {
+    cursor: pointer;
+}
+</style>
 <script>
+
+function activateInvoiceClick() {
+
+    document.querySelectorAll('.invoice-row').forEach(row => {
+
+        row.addEventListener('click', function(){
+
+            // hapus active invoice lain
+            document.querySelectorAll('.invoice-row')
+                .forEach(r => r.classList.remove('active'));
+
+            this.classList.add('active');
+
+            let sisa = parseInt(this.dataset.sisa);
+
+            document.querySelector('input[name="jumlah_bayar"]').value = sisa;
+
+        });
+
+    });
+
+}
 
 document.querySelectorAll('.customer-row').forEach(row => {
 
     row.addEventListener('click', function(){
 
+        // HAPUS ACTIVE CUSTOMER LAIN
+        document.querySelectorAll('.customer-row')
+            .forEach(r => r.classList.remove('active'));
+
+        this.classList.add('active');
+
         let customerId = this.dataset.id;
+        let totalSisa = this.dataset.sisa;
+
+        // SET CUSTOMER ID
+        document.getElementById('customer_id_input').value = customerId;
+
+        // 🔥 AUTO ISI TOTAL PIUTANG CUSTOMER
+        document.querySelector('input[name="jumlah_bayar"]').value = totalSisa;
 
         fetch(`/api/piutang/${customerId}`)
             .then(res => res.json())
@@ -166,7 +215,8 @@ document.querySelectorAll('.customer-row').forEach(row => {
                 data.forEach((item, index) => {
 
                     tbody.innerHTML += `
-                        <tr>
+                        <tr class="invoice-row"
+                            data-sisa="${item.sisa.replace(/\./g,'')}">
                             <td>${index+1}</td>
                             <td>${item.tgl}</td>
                             <td>${item.no}</td>
@@ -181,9 +231,9 @@ document.querySelectorAll('.customer-row').forEach(row => {
                     `;
                 });
 
-            });
+                activateInvoiceClick();
 
-        document.getElementById('customer_id_input').value = customerId;
+            });
 
     });
 

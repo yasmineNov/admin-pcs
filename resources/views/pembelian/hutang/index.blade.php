@@ -38,7 +38,8 @@
                     @endphp
 
                     @if($sisa > 0)
-                    <tr class="supplier-row" data-id="{{ $supplier->id }}">
+                    {{-- <tr class="supplier-row" data-id="{{ $supplier->id }}"> --}}
+                    <tr class="supplier-row" data-id="{{ $supplier->id }}" data-sisa="{{ $sisa }}">
                         <td>{{ $i+1 }}</td>
                         <td>{{ $supplier->nama_supplier }}</td>
                         <td>{{ number_format($total,0,',','.') }}</td>
@@ -141,12 +142,62 @@
 @endsection
 
 @section('scripts')
+<style>
+.supplier-row.active {
+    background-color: #d1ecf1 !important;
+    cursor: pointer;
+}
+.invoice-row.active {
+    background-color: #ffeeba !important;
+    cursor: pointer;
+}
+.supplier-row, .invoice-row {
+    cursor: pointer;
+}
+</style>
+
 <script>
+
+function activateInvoiceClick() {
+
+    document.querySelectorAll('.invoice-row').forEach(row => {
+
+        row.addEventListener('click', function(){
+
+            // hapus active invoice lain
+            document.querySelectorAll('.invoice-row')
+                .forEach(r => r.classList.remove('active'));
+
+            this.classList.add('active');
+
+            let sisa = parseInt(this.dataset.sisa);
+
+            document.querySelector('input[name="jumlah_bayar"]').value = sisa;
+
+        });
+
+    });
+
+}
+
 document.querySelectorAll('.supplier-row').forEach(row => {
 
     row.addEventListener('click', function(){
 
+        // HAPUS ACTIVE SUPPLIER LAIN
+        document.querySelectorAll('.supplier-row')
+            .forEach(r => r.classList.remove('active'));
+
+        this.classList.add('active');
+
         let supplierId = this.dataset.id;
+        let totalSisa = this.dataset.sisa;
+
+        // SET SUPPLIER ID
+        document.getElementById('supplier_id_input').value = supplierId;
+
+        // AUTO ISI TOTAL HUTANG SUPPLIER
+        document.querySelector('input[name="jumlah_bayar"]').value = totalSisa;
 
         fetch(`/api/hutang/${supplierId}`)
             .then(res => res.json())
@@ -164,7 +215,8 @@ document.querySelectorAll('.supplier-row').forEach(row => {
                 data.forEach((item, index) => {
 
                     tbody.innerHTML += `
-                        <tr>
+                        <tr class="invoice-row"
+                            data-sisa="${item.sisa.replace(/\./g,'')}">
                             <td>${index+1}</td>
                             <td>${item.tgl}</td>
                             <td>${item.no}</td>
@@ -179,20 +231,14 @@ document.querySelectorAll('.supplier-row').forEach(row => {
                     `;
                 });
 
+                activateInvoiceClick();
+
             });
 
     });
 
 });
-document.querySelectorAll('.supplier-row').forEach(row => {
-
-    row.addEventListener('click', function(){
-        let supplierId = this.dataset.id;
-
-        document.getElementById('supplier_id_input').value = supplierId;
-    });
-
-});
 
 </script>
+
 @endsection
