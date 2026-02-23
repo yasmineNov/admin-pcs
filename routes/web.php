@@ -182,6 +182,9 @@ Route::prefix('penjualan/invoice')
 
 Route::get('/invSales/{id}/detail', [InvoiceController::class, 'detailSales']);
 
+
+Route::get('/penjualan/data/export', [InvoiceController::class, 'exportPenjualan'])->name('penjualan.data.export');
+Route::get('/penjualan/data/print', [InvoiceController::class, 'printPenjualan'])->name('penjualan.data.print');
 /*
 |--------------------------------------------------------------------------
 | DATA PEMBELIAN
