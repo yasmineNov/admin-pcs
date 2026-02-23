@@ -8,4 +8,13 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+     server: {
+        host: true,
+        port: 5173,
+        strictPort: true,
+        hmr: {
+            protocol: 'ws',
+            host: '192.168.18.49', // ← ganti IP kamu
+        },
+    },
 });
