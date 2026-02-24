@@ -3,32 +3,47 @@
 @section('content')
 <div class="card">
     <div class="card-header">
-        <div class="d-flex justify-content-between">
+        <div class="d-flex justify-content-between align-items-center">
             <h2>Master Barang</h2>
-            <a href="{{ route('barang.create') }}" class="btn btn-primary mb-2">
+            <a href="{{ route('barang.create') }}" class="btn btn-primary">
                  + Tambah Barang
             </a>
         </div>
+
+        {{-- FILTER SEARCH --}}
+        <form method="GET" action="{{ route('barang.index') }}" class="mt-3">
+            <div class="input-group">
+                <input type="text"
+                       name="search"
+                       class="form-control"
+                       placeholder="Cari nama / kode barang..."
+                       value="{{ request('search') }}">
+                <button class="btn btn-secondary">Cari</button>
+            </div>
+        </form>
     </div>
+
     <div class="card-body">
-        <table class="table table-bordered table-striped">
+        {{-- <table class="table table-bordered table-striped" style="table-layout: fixed;"> --}}
+            <table class="table table-bordered table-striped">
             <thead class="thead-dark">
                 <tr>
-                    <th>Kode Barang</th>
-                    <th>Nama Barang</th>
-                    <th>Supplier</th>
-                    <th>Stok</th>
-                    <th width="120">Aksi</th>
+                    <th style="white-space: nowrap;">Kode Barang</th>
+        <th>Nama Barang</th>
+        <th style="width: 20%;">Supplier</th>
+        <th style="width: 90px;" class="text-center">Stok</th>
+        <th style="width: 170px;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($barangs as $b)
+                @forelse($barangs as $b)
                 <tr>
                     <td>{{ $b->kode_barang }}</td>
                     <td>{{ $b->nama_barang }}</td>
                     <td>{{ $b->supplier->nama_supplier ?? '-' }}</td>
                     <td>{{ $b->stok }} roll</td>
                     <td>
+                        <div class="d-flex gap-1">
                         <a href="{{ route('barang.edit',$b->id) }}"
                            class="btn btn-warning btn-sm">Edit</a>
 
@@ -42,14 +57,33 @@
                                 Hapus
                             </button>
                         </form>
+                        </div>
                     </td>
                 </tr>
-                @endforeach
+                @empty
+                <tr>
+                    <td colspan="5" class="text-center">
+                        Data tidak ditemukan
+                    </td>
+                </tr>
+                @endforelse
             </tbody>
         </table>
+
+        {{-- PAGINATION --}}
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div>
+        Menampilkan {{ $barangs->firstItem() ?? 0 }}
+        –
+        {{ $barangs->lastItem() ?? 0 }}
+        dari {{ $barangs->total() }} data
+    </div>
+
+    <div>
+        {{ $barangs->links() }}
+    </div>
+</div>
+
     </div>
 </div>
 @endsection
-
-
-
