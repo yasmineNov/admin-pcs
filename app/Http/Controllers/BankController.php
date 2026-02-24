@@ -7,11 +7,24 @@ use Illuminate\Http\Request;
 
 class BankController extends Controller
 {
-    public function index()
-    {
-        $banks = Bank::all();
-        return view('banks.index', compact('banks'));
+    public function index(Request $request)
+{
+    $query = \App\Models\Bank::query();
+
+    if ($request->search) {
+        $query->where(function ($q) use ($request) {
+            $q->where('kode_bank', 'like', '%' . $request->search . '%')
+              ->orWhere('nama_bank', 'like', '%' . $request->search . '%')
+              ->orWhere('nama_rekening', 'like', '%' . $request->search . '%')
+              ->orWhere('no_rekening', 'like', '%' . $request->search . '%');
+        });
     }
+
+    $banks = $query->paginate(10)->withQueryString();
+
+    return view('banks.index', compact('banks'));
+}
+
 
     public function create()
     {

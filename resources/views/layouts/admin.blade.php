@@ -116,10 +116,10 @@
 
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="{{ route('incoming-barangs.index') }}" class="nav-link {{ request()->is('incoming-barangs*') ? 'active' : '' }}">
+                            {{-- <a href="{{ route('incoming-barangs.index') }}" class="nav-link {{ request()->is('incoming-barangs*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-download"></i>
                                 <p>Incoming Barang</p>
-                            </a>
+                            </a> --}}
                         </li>
                         <li class="nav-item">
                             <a href="{{ route('mutasi-barangs.index') }}" class="nav-link {{ request()->is('mutasi-barangs*') ? 'active' : '' }}">

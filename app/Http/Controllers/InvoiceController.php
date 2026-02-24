@@ -20,25 +20,89 @@ class InvoiceController extends Controller
     // INDEX
     // ===========================
 
-    public function indexMasuk()
-    {
-        $invoices = Invoice::with(['supplier', 'deliveryNote.order'])
-            ->where('type', 'in') // sesuai enum DB
-            ->latest()
-            ->get();
+    public function indexMasuk(Request $request)
+{
+    $query = Invoice::with(['supplier'])
+        ->where('type', 'in');
 
-        return view('pembelian.invoice.index', compact('invoices'));
+    // 🔎 Filter tanggal
+    if ($request->filled('from')) {
+        $query->whereDate('tgl', '>=', $request->from);
     }
 
-    public function indexKeluar()
-    {
-        $invoices = Invoice::with('details.orderDetail.barang', 'deliveryNote.order.customer')
-            ->where('type', 'out') // sesuai enum DB
-            ->latest()
-            ->get();
-
-        return view('penjualan.invoice.index', compact('invoices'));
+    if ($request->filled('to')) {
+        $query->whereDate('tgl', '<=', $request->to);
     }
+
+    // 🔎 Filter supplier
+    if ($request->filled('supplier_id')) {
+        $query->where('supplier_id', $request->supplier_id);
+    }
+
+    $invoices = $query->latest()
+                      ->paginate(10)
+                      ->withQueryString();
+
+    $suppliers = Supplier::orderBy('nama_supplier')->get();
+
+    return view('pembelian.invoice.index', compact(
+        'invoices',
+        'suppliers'
+    ));
+}
+
+
+
+    public function indexKeluar(Request $request)
+{
+    // ================= QUERY DASAR =================
+    $query = Invoice::with([
+        'customer',
+        'details.orderDetail'
+    ])->where('type', 'out');
+
+
+    // ================= FILTER TANGGAL =================
+    if ($request->filled('from')) {
+        $query->whereDate('tgl', '>=', $request->from);
+    }
+
+    if ($request->filled('to')) {
+        $query->whereDate('tgl', '<=', $request->to);
+    }
+
+
+    // ================= FILTER CUSTOMER =================
+    if ($request->filled('customer_id')) {
+        $query->where('customer_id', $request->customer_id);
+    }
+
+
+    // ================= TOTAL KESELURUHAN (SESUAI FILTER) =================
+    $totalAllDpp   = (clone $query)->sum('dpp');
+    $totalAllPpn   = (clone $query)->sum('ppn');
+    $totalAllGrand = (clone $query)->sum('grand_total');
+
+
+    // ================= PAGINATION =================
+    $invoices = $query->latest()
+                      ->paginate(10)
+                      ->withQueryString();
+
+
+    // ================= DATA CUSTOMER =================
+    $customers = Customer::orderBy('nama_customer')->get();
+
+
+    // ================= RETURN VIEW =================
+    return view('penjualan.invoice.index', [
+        'invoices'      => $invoices,
+        'customers'     => $customers,
+        'totalAllDpp'   => $totalAllDpp,
+        'totalAllPpn'   => $totalAllPpn,
+        'totalAllGrand' => $totalAllGrand,
+    ]);
+}
 
     // ===========================
     // DATA PEMBELIAN
@@ -51,68 +115,96 @@ public function dataPembelian(Request $request)
         'details.orderDetail'
     ])->where('type', Invoice::TYPE_MASUK);
 
-        // Filter tanggal
-        if ($request->from && $request->to) {
-            $query->whereBetween('tgl', [
-                Carbon::parse($request->from),
-                Carbon::parse($request->to)
-            ]);
-        }
-
-        $invoices = $query->latest()->get();
-
-        // Summary
-        $totalDpp = $invoices->sum('dpp');
-        $totalPpn = $invoices->sum('ppn');
-        $grandTotal = $invoices->sum('grand_total');
-        $suppliers = \App\Models\Supplier::all(); // <<< WAJIB ADA INI
-
-        return view('pembelian.data-pembelian.index', compact(
-            'invoices',
-            'totalDpp',
-            'totalPpn',
-            'grandTotal',
-            'suppliers'
-        ));
+    // Filter tanggal
+    if ($request->from && $request->to) {
+        $query->whereBetween('tgl', [
+            Carbon::parse($request->from),
+            Carbon::parse($request->to)
+        ]);
     }
 
-
-
- // ===========================
-    // DATA PENJUALAN
-    // ===========================
-
-    public function dataPenjualan(Request $request)
-{
-    $query = Invoice::with([
-        'customer',
-        'details.orderDetail'
-    ])->where('type', Invoice::TYPE_KELUAR);
-
-    if ($request->filled('from') && $request->filled('to')) {
-        $query->whereBetween('tgl', [$request->from, $request->to]);
+    // Filter supplier
+    if ($request->supplier_id) {
+        $query->where('supplier_id', $request->supplier_id);
     }
 
-    if ($request->filled('customer_id')) {
-        $query->where('customer_id', $request->customer_id);
+    // 🔎 Search
+    if ($request->search) {
+        $query->where(function ($q) use ($request) {
+            $q->where('no', 'like', '%' . $request->search . '%')
+              ->orWhere('keterangan', 'like', '%' . $request->search . '%')
+              ->orWhereHas('supplier', function ($s) use ($request) {
+                  $s->where('nama_supplier', 'like', '%' . $request->search . '%');
+              });
+        });
     }
 
-    $invoices = $query->latest()->get();
+    // Clone query untuk summary (agar tidak kepotong pagination)
+    $summaryQuery = clone $query;
 
-    $totalDpp = $invoices->sum('dpp');
-    $totalPpn = $invoices->sum('ppn');
-    $grandTotal = $invoices->sum('grand_total');
+    // Pagination
+    $invoices = $query->latest()
+                      ->paginate(10)
+                      ->withQueryString();
 
-    $customers = \App\Models\Customer::all();
+    // Summary dari SEMUA hasil filter (bukan cuma 10 data)
+    $totalDpp = $summaryQuery->sum('dpp');
+    $totalPpn = $summaryQuery->sum('ppn');
+    $grandTotal = $summaryQuery->sum('grand_total');
 
-    return view('penjualan.data-penjualan.index', compact(
+    $suppliers = \App\Models\Supplier::orderBy('nama_supplier')->get();
+
+    return view('pembelian.data-pembelian.index', compact(
         'invoices',
         'totalDpp',
         'totalPpn',
         'grandTotal',
-        'customers'
+        'suppliers'
     ));
 }
+
+public function dataPenjualan(Request $request)
+{
+    $query = Invoice::with([
+        'customer',
+        'details.orderDetail'
+    ])->where('type','out');
+
+    // ================= FILTER TANGGAL =================
+    if ($request->filled('from')) {
+        $query->whereDate('tgl','>=',$request->from);
+    }
+
+    if ($request->filled('to')) {
+        $query->whereDate('tgl','<=',$request->to);
+    }
+
+    // ================= FILTER CUSTOMER =================
+    if ($request->filled('customer_id')) {
+        $query->where('customer_id',$request->customer_id);
+    }
+
+    // ================= TOTAL KESELURUHAN =================
+    $totalAllDpp   = (clone $query)->sum('dpp');
+    $totalAllPpn   = (clone $query)->sum('ppn');
+    $totalAllGrand = (clone $query)->sum('grand_total');
+
+    // ================= PAGINATION =================
+    $invoices = $query->latest()
+                      ->paginate(10)
+                      ->withQueryString();
+
+    $customers = Customer::orderBy('nama_customer')->get();
+
+    return view('penjualan.data-penjualan.index', [
+        'invoices'      => $invoices,
+        'customers'     => $customers,
+        'totalAllDpp'   => $totalAllDpp,
+        'totalAllPpn'   => $totalAllPpn,
+        'totalAllGrand' => $totalAllGrand,
+    ]);
+}
+
 public function exportPenjualan(Request $request)
 {
     $query = Invoice::with('customer')

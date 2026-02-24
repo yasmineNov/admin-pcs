@@ -12,29 +12,6 @@ use Illuminate\Http\Request;
 
 class OrdersController extends Controller
 {
-    //     private function generateNomor($type)
-// {
-//     $bulan = now()->month;
-//     $tahun = now()->year;
-
-    //     $romawi = [
-//         1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV',
-//         5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII',
-//         9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
-//     ];
-
-    //     $kode = $type == 'keluar' ? 'PCS-SO' : 'PCS-PO';
-
-    //     $count = Orders::where('type', $type)
-//         ->whereMonth('created_at', $bulan)
-//         ->whereYear('created_at', $tahun)
-//         ->count() + 1;
-
-    //     $noUrut = str_pad($count, 3, '0', STR_PAD_LEFT);
-
-    //     return $noUrut . '/' . $kode . '/' . $romawi[$bulan] . '/' . $tahun;
-// }
-
     public function index()
     {
         return Orders::with(['customers', 'supplier'])
@@ -43,16 +20,27 @@ class OrdersController extends Controller
     }
     //============================= pembelian ========================================================
     // Tampilkan semua PO
-    public function indexPO()
-    {
-        $orders = Orders::with(['supplier', 'details.barang'])
-            ->where('type', 'purchase')
-            ->latest()
-            ->get();
 
-        return view('pembelian.purchase-order.index', compact('orders'));
+    public function indexPO(Request $request)
+    {
+    $query = Orders::with(['supplier', 'details.barang'])
+                ->where('type', 'PO'); // kalau kamu pakai type
+
+    if ($request->search) {
+        $query->where(function ($q) use ($request) {
+            $q->where('no', 'like', '%' . $request->search . '%')
+              ->orWhereHas('supplier', function ($s) use ($request) {
+                  $s->where('nama_supplier', 'like', '%' . $request->search . '%');
+              });
+        });
     }
 
+    $orders = $query->orderByDesc('tgl')
+                    ->paginate(10)
+                    ->withQueryString();
+
+    return view('pembelian.purchase-order.index', compact('orders'));
+    }
 
     public function createPO()
     {
@@ -145,16 +133,36 @@ class OrdersController extends Controller
     //============================= End pembelian ========================================================
 
     //============================= PENJUALAN ========================================================
-    // Tampilkan semua PO
-    public function indexSO()
-    {
-        $orders = Orders::with(['customer', 'details.barang'])
-            ->where('type', 'sales')
-            ->latest()
-            ->get();
+    // Tampilkan semua SO
+    // public function indexSO()
+    // {
+    //     $orders = Orders::with(['customer', 'details.barang'])
+    //         ->where('type', 'sales')
+    //         ->latest()
+    //         ->get();
 
-        return view('penjualan.sales-order.index', compact('orders'));
+    //     return view('penjualan.sales-order.index', compact('orders'));
+    // }
+    public function indexSO(Request $request)
+{
+    $query = Orders::with(['customer', 'details.barang'])
+                ->where('type', 'SO'); // kalau kamu pakai type
+
+    if ($request->search) {
+        $query->where(function ($q) use ($request) {
+            $q->where('no', 'like', '%' . $request->search . '%')
+              ->orWhereHas('customer', function ($c) use ($request) {
+                  $c->where('nama_customer', 'like', '%' . $request->search . '%');
+              });
+        });
     }
+
+    $orders = $query->orderByDesc('tgl')
+                    ->paginate(10)
+                    ->withQueryString();
+
+    return view('penjualan.sales-order.index', compact('orders'));
+}
 
 
     public function createSO()

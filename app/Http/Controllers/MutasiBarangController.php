@@ -10,37 +10,54 @@ class MutasiBarangController extends Controller
 {
 
     public function index(Request $request)
-    {
-        $barangId = $request->barang_id;
-        $barangs = Barang::orderBy('nama_barang')->get();
-        $mutasis = collect();
+{
+    $barangId = $request->barang_id;
+    $barangs = Barang::orderBy('nama_barang')->get();
+    $mutasis = collect();
 
-        if ($barangId) {
-            $saldo = 0;
+    if ($barangId) {
 
-            $mutasis = MutasiBarang::where('barang_id', $barangId)
-                ->orderBy('tgl_mutasi')
-                ->orderBy('id')
-                ->get()
-                ->map(function ($mutasi) use (&$saldo) {
+        $saldo = 0;
 
-                    if ($mutasi->tipe === 'IN') {
-                        $saldo += $mutasi->qty;
-                        $mutasi->masuk = $mutasi->qty;
-                        $mutasi->keluar = 0;
-                    } elseif ($mutasi->tipe === 'OUT') {
-                        $saldo -= $mutasi->qty;
-                        $mutasi->masuk = 0;
-                        $mutasi->keluar = $mutasi->qty;
-                    }
+        $allMutasi = MutasiBarang::where('barang_id', $barangId)
+            ->orderBy('tgl_mutasi')
+            ->orderBy('id')
+            ->get()
+            ->map(function ($mutasi) use (&$saldo) {
 
-                    $mutasi->saldo = $saldo;
-                    return $mutasi;
-                });
-        }
+                if ($mutasi->tipe === 'IN') {
+                    $saldo += $mutasi->qty;
+                    $mutasi->masuk = $mutasi->qty;
+                    $mutasi->keluar = 0;
+                } elseif ($mutasi->tipe === 'OUT') {
+                    $saldo -= $mutasi->qty;
+                    $mutasi->masuk = 0;
+                    $mutasi->keluar = $mutasi->qty;
+                }
 
-        return view('mutasi_barangs.index', compact('mutasis', 'barangs', 'barangId'));
+                $mutasi->saldo = $saldo;
+                return $mutasi;
+            });
+
+        // PAGINATE COLLECTION
+        $perPage = 10;
+        $currentPage = request()->get('page', 1);
+
+        $mutasis = new \Illuminate\Pagination\LengthAwarePaginator(
+            $allMutasi->forPage($currentPage, $perPage),
+            $allMutasi->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]
+        );
     }
+
+    return view('mutasi_barangs.index', compact('mutasis', 'barangs', 'barangId'));
+}
+
 
     public function create()
     {

@@ -12,47 +12,50 @@
         <!--  ATAS - CUSTOMER   -->
         <!-- =================== -->
 
-        <table class="table table-bordered table-striped" id="customer-table">
-            <thead class="bg-secondary text-white">
-                <tr>
-                    <th>No</th>
-                    <th>Nama Customer</th>
-                    <th>Total Piutang</th>
-                    <th>Terbayar</th>
-                    <th>Sisa</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($customers as $i => $customer)
-
-                    @php
-                        $total = 0;
-                        $paid = 0;
-
-                        foreach($customer->invoices as $inv){
-                            $total += $inv->grand_total;
-                            $paid += $inv->paymentDetails->sum('subtotal');
-                        }
-
-                        $sisa = $total - $paid;
-                    @endphp
-
-                    @if($sisa > 0)
-                    {{-- <tr class="customer-row" data-id="{{ $customer->id }}"> --}}
-                    <tr class="customer-row" data-id="{{ $customer->id }}" data-sisa="{{ $sisa }}">
-                        <td>{{ $i+1 }}</td>
-                        <td>{{ $customer->nama_customer }}</td>
-                        <td>{{ number_format($total,0,',','.') }}</td>
-                        <td>{{ number_format($paid,0,',','.') }}</td>
-                        <td class="text-danger fw-bold">
-                            {{ number_format($sisa,0,',','.') }}
-                        </td>
+        <div class="scroll-box mb-3">
+            <table class="table table-bordered table-striped mb-0" id="customer-table">
+                <thead class="bg-secondary text-white">
+                    <tr>
+                        <th>No</th>
+                        <th>Nama Customer</th>
+                        <th>Total Piutang</th>
+                        <th>Terbayar</th>
+                        <th>Sisa</th>
                     </tr>
-                    @endif
+                </thead>
+                <tbody>
+                    @foreach($customers as $i => $customer)
 
-                @endforeach
-            </tbody>
-        </table>
+                        @php
+                            $total = 0;
+                            $paid = 0;
+
+                            foreach($customer->invoices as $inv){
+                                $total += $inv->grand_total;
+                                $paid += $inv->paymentDetails->sum('subtotal');
+                            }
+
+                            $sisa = $total - $paid;
+                        @endphp
+
+                        @if($sisa > 0)
+                        <tr class="customer-row"
+                            data-id="{{ $customer->id }}"
+                            data-sisa="{{ $sisa }}">
+                            <td>{{ $i+1 }}</td>
+                            <td>{{ $customer->nama_customer }}</td>
+                            <td>{{ number_format($total,0,',','.') }}</td>
+                            <td>{{ number_format($paid,0,',','.') }}</td>
+                            <td class="text-danger fw-bold">
+                                {{ number_format($sisa,0,',','.') }}
+                            </td>
+                        </tr>
+                        @endif
+
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
 
         <hr>
 
@@ -62,27 +65,29 @@
 
         <h5>Detail Invoice Customer</h5>
 
-        <table class="table table-bordered" id="invoice-detail-table">
-            <thead class="bg-light">
-                <tr>
-                    <th>No</th>
-                    <th>Tgl Invoice</th>
-                    <th>No Invoice</th>
-                    <th>No SO</th>
-                    <th>Jatuh Tempo</th>
-                    <th>Total</th>
-                    <th>Terbayar</th>
-                    <th>Kurang</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td colspan="8" class="text-center text-muted">
-                        Pilih customer di atas
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="scroll-box mb-3">
+            <table class="table table-bordered mb-0" id="invoice-detail-table">
+                <thead class="bg-light">
+                    <tr>
+                        <th>No</th>
+                        <th>Tgl Invoice</th>
+                        <th>No Invoice</th>
+                        <th>No SO</th>
+                        <th>Jatuh Tempo</th>
+                        <th>Total</th>
+                        <th>Terbayar</th>
+                        <th>Kurang</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">
+                            Pilih customer di atas
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
         <hr>
 
@@ -143,48 +148,66 @@
 
 
 @section('scripts')
+
 <style>
+.scroll-box {
+    max-height: 350px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #dee2e6;
+}
+
+/* Sticky header optional */
+.scroll-box thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+#customer-table thead th {
+    background: #6c757d;
+    color: white;
+}
+
+#invoice-detail-table thead th {
+    background: #f8f9fa;
+    color: black;
+}
+
 .customer-row.active {
     background-color: #d1ecf1 !important;
     cursor: pointer;
 }
+
 .invoice-row.active {
     background-color: #ffeeba !important;
     cursor: pointer;
 }
-.customer-row, .invoice-row {
+
+.customer-row,
+.invoice-row {
     cursor: pointer;
 }
 </style>
+
 <script>
-
 function activateInvoiceClick() {
-
     document.querySelectorAll('.invoice-row').forEach(row => {
-
         row.addEventListener('click', function(){
-
-            // hapus active invoice lain
             document.querySelectorAll('.invoice-row')
                 .forEach(r => r.classList.remove('active'));
 
             this.classList.add('active');
 
             let sisa = parseInt(this.dataset.sisa);
-
             document.querySelector('input[name="jumlah_bayar"]').value = sisa;
-
         });
-
     });
-
 }
 
 document.querySelectorAll('.customer-row').forEach(row => {
-
     row.addEventListener('click', function(){
 
-        // HAPUS ACTIVE CUSTOMER LAIN
         document.querySelectorAll('.customer-row')
             .forEach(r => r.classList.remove('active'));
 
@@ -193,10 +216,7 @@ document.querySelectorAll('.customer-row').forEach(row => {
         let customerId = this.dataset.id;
         let totalSisa = this.dataset.sisa;
 
-        // SET CUSTOMER ID
         document.getElementById('customer_id_input').value = customerId;
-
-        // 🔥 AUTO ISI TOTAL PIUTANG CUSTOMER
         document.querySelector('input[name="jumlah_bayar"]').value = totalSisa;
 
         fetch(`/api/piutang/${customerId}`)
@@ -213,7 +233,6 @@ document.querySelectorAll('.customer-row').forEach(row => {
                 }
 
                 data.forEach((item, index) => {
-
                     tbody.innerHTML += `
                         <tr class="invoice-row"
                             data-sisa="${item.sisa.replace(/\./g,'')}">
@@ -232,12 +251,9 @@ document.querySelectorAll('.customer-row').forEach(row => {
                 });
 
                 activateInvoiceClick();
-
             });
-
     });
-
 });
-
 </script>
+
 @endsection

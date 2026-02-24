@@ -96,7 +96,7 @@
     <!-- Center Content -->
     <div class="d-flex justify-content-center align-items-center vh-100">
         <div class="glass-card">
-            <h2 class="mb-4 fw-bold">Welcome To Admin PCS</h2>
+            <h2 class="mb-4 fw-bold">Admin PCS</h2>
             <p class="mb-4">Silakan masuk atau buat akun untuk melanjutkan</p>
 
             <div class="d-flex gap-3 justify-content-center">
