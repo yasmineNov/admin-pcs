@@ -9,11 +9,12 @@ export default defineConfig({
         }),
     ],
     server: {
-        host: '0.0.0.0',
+        host: true,
         port: 5173,
         strictPort: true,
         hmr: {
-            host: '192.168.18.75', // ← ganti IP kamu
+            protocol: 'ws',
+            host: '192.168.18.49', // ← ganti IP kamu
         },
     },
 });
