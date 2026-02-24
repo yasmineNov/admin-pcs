@@ -525,6 +525,7 @@ public function bayarPiutang(Request $request)
 
     public function storeMasuk(Request $request)
     {
+        
         $request->validate([
             'no' => 'required|unique:invoices,no',
             'tgl' => 'required|date',
