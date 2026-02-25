@@ -212,6 +212,9 @@ Route::get('/pembelian/data-pembelian/export',[InvoiceController::class, 'export
 Route::get('/pembelian/data-pembelian/print',[InvoiceController::class, 'printPembelian'])->name('pembelian.data-pembelian.print');
 Route::get('/api/invoice/{id}/payments', [InvoiceController::class, 'getPayments']);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -229,6 +232,9 @@ Route::get('/penjualan/data-penjualan/export',[InvoiceController::class, 'export
 Route::get('/penjualan/data-penjualan/print',[InvoiceController::class, 'printPenjualan'])->name('penjualan.data-penjualan.print');
 Route::get('/api/piutang/{id}/payments', [InvoiceController::class, 'getPaymentsPiutang']);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
