@@ -17,60 +17,61 @@ class DeliveryNoteController extends Controller
 
     // DN Pembelian (Masuk)
     public function indexMasuk(Request $request)
-{
-    $query = DeliveryNote::with(['order.supplier','details'])
-                ->where('type', 'pembelian'); // kalau kamu pakai type
+    {
+        $query = DeliveryNote::with(['order.supplier', 'details'])
+            ->where('type', 'masuk'); // kalau kamu pakai type
 
-    // 🔎 SEARCH
-    if ($request->search) {
-        $query->where(function ($q) use ($request) {
+        // 🔎 SEARCH
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
 
-            $q->where('no', 'like', '%' . $request->search . '%')
+                $q->where('no', 'like', '%' . $request->search . '%')
 
-              ->orWhereHas('order', function ($o) use ($request) {
-                  $o->where('no', 'like', '%' . $request->search . '%');
-              })
+                    ->orWhereHas('order', function ($o) use ($request) {
+                        $o->where('no', 'like', '%' . $request->search . '%');
+                    })
 
-              ->orWhereHas('order.supplier', function ($s) use ($request) {
-                  $s->where('nama_supplier', 'like', '%' . $request->search . '%');
-              });
-        });
+                    ->orWhereHas('order.supplier', function ($s) use ($request) {
+                        $s->where('nama_supplier', 'like', '%' . $request->search . '%');
+                    });
+            });
+        }
+
+        $deliveryNotes = $query->orderByDesc('tgl')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('pembelian.delivery_note.index', compact('deliveryNotes'));
     }
-
-    $deliveryNotes = $query->orderByDesc('tgl')
-                           ->paginate(10)
-                           ->withQueryString();
-
-    return view('pembelian.delivery_note.index', compact('deliveryNotes'));
-}
 
     // DN Penjualan (Keluar)
     public function indexKeluar(Request $request)
-{
-    $query = DeliveryNote::with(['order.customer', 'details']);
+    {
+        $query = DeliveryNote::with(['order.customer', 'details'])
+            ->where('type', 'keluar');
 
-    // 🔎 SEARCH
-    if ($request->search) {
-        $query->where(function ($q) use ($request) {
+        // 🔎 SEARCH
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
 
-            $q->where('no', 'like', '%' . $request->search . '%')
+                $q->where('no', 'like', '%' . $request->search . '%')
 
-              ->orWhereHas('order', function ($o) use ($request) {
-                  $o->where('no', 'like', '%' . $request->search . '%');
-              })
+                    ->orWhereHas('order', function ($o) use ($request) {
+                        $o->where('no', 'like', '%' . $request->search . '%');
+                    })
 
-              ->orWhereHas('order.customer', function ($c) use ($request) {
-                  $c->where('nama_customer', 'like', '%' . $request->search . '%');
-              });
-        });
+                    ->orWhereHas('order.customer', function ($c) use ($request) {
+                        $c->where('nama_customer', 'like', '%' . $request->search . '%');
+                    });
+            });
+        }
+
+        $deliveryNotes = $query->orderByDesc('tgl')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('penjualan.delivery_note.index', compact('deliveryNotes'));
     }
-
-    $deliveryNotes = $query->orderByDesc('tgl')
-                           ->paginate(10)
-                           ->withQueryString();
-
-    return view('penjualan.delivery_note.index', compact('deliveryNotes'));
-}
 
 
     // ===========================

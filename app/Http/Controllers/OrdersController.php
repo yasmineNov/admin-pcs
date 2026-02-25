@@ -23,23 +23,23 @@ class OrdersController extends Controller
 
     public function indexPO(Request $request)
     {
-    $query = Orders::with(['supplier', 'details.barang'])
-                ->where('type', 'PO'); // kalau kamu pakai type
+        $query = Orders::with(['supplier', 'details.barang'])
+            ->where('type', 'purchase'); // kalau kamu pakai type
 
-    if ($request->search) {
-        $query->where(function ($q) use ($request) {
-            $q->where('no', 'like', '%' . $request->search . '%')
-              ->orWhereHas('supplier', function ($s) use ($request) {
-                  $s->where('nama_supplier', 'like', '%' . $request->search . '%');
-              });
-        });
-    }
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('no', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('supplier', function ($s) use ($request) {
+                        $s->where('nama_supplier', 'like', '%' . $request->search . '%');
+                    });
+            });
+        }
 
-    $orders = $query->orderByDesc('tgl')
-                    ->paginate(10)
-                    ->withQueryString();
+        $orders = $query->orderByDesc('tgl')
+            ->paginate(10)
+            ->withQueryString();
 
-    return view('pembelian.purchase-order.index', compact('orders'));
+        return view('pembelian.purchase-order.index', compact('orders'));
     }
 
     public function createPO()
@@ -47,7 +47,7 @@ class OrdersController extends Controller
         $suppliers = Supplier::all();
         $barangs = Barang::all();
         $deliveryNotes = DeliveryNote::where('type', 'masuk')->get(); // <- ini
-        return view('pembelian.purchase-order.create', compact('suppliers', 'barangs','deliveryNotes'));
+        return view('pembelian.purchase-order.create', compact('suppliers', 'barangs', 'deliveryNotes'));
     }
 
     public function storePO(Request $request)
@@ -144,25 +144,25 @@ class OrdersController extends Controller
     //     return view('penjualan.sales-order.index', compact('orders'));
     // }
     public function indexSO(Request $request)
-{
-    $query = Orders::with(['customer', 'details.barang'])
-                ->where('type', 'SO'); // kalau kamu pakai type
+    {
+        $query = Orders::with(['customer', 'details.barang'])
+            ->where('type', 'sales'); // kalau kamu pakai type
 
-    if ($request->search) {
-        $query->where(function ($q) use ($request) {
-            $q->where('no', 'like', '%' . $request->search . '%')
-              ->orWhereHas('customer', function ($c) use ($request) {
-                  $c->where('nama_customer', 'like', '%' . $request->search . '%');
-              });
-        });
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('no', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('customer', function ($c) use ($request) {
+                        $c->where('nama_customer', 'like', '%' . $request->search . '%');
+                    });
+            });
+        }
+
+        $orders = $query->orderByDesc('tgl')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('penjualan.sales-order.index', compact('orders'));
     }
-
-    $orders = $query->orderByDesc('tgl')
-                    ->paginate(10)
-                    ->withQueryString();
-
-    return view('penjualan.sales-order.index', compact('orders'));
-}
 
 
     public function createSO()
