@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
  use Carbon\Carbon;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\Kas;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -20,9 +21,7 @@ class DashboardController extends Controller
         $totalHutang = Invoice::where('type','in')
             ->sum(DB::raw('grand_total - paid'));
 
-        $kasMasuk = Payment::where('type','in')->sum('total');
-        $kasKeluar = Payment::where('type','out')->sum('total');
-        $saldoKas = $kasMasuk - $kasKeluar;
+        $saldoKas = Kas::latest('id')->value('saldo') ?? 0;
 
         $currentYear = Carbon::now()->year;
 
