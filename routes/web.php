@@ -4,6 +4,7 @@ use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\PremiUserController;
 use App\Http\Controllers\SewaKendaraanController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BarangController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\KasController;
 
+
 /*
 |--------------------------------------------------------------------------
 | BASIC
@@ -25,8 +27,13 @@ use App\Http\Controllers\KasController;
 */
 
 Route::get('/', fn() => view('welcome'));
-Route::get('/dashboard', fn() => view('dashboard'))
-    ->middleware(['auth', 'verified'])
+// Route::get('/dashboard', fn() => view('dashboard'))
+//     ->middleware(['auth', 'verified'])
+//     ->name('dashboard');
+
+
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
