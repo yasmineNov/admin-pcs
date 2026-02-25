@@ -97,7 +97,9 @@
                     <th>DPP</th>
                     <th>PPN</th>
                     <th>Total</th>
-                    <th>Qty</th>
+                    {{-- <th>Qty</th> --}}
+                    <th>metode bayar</th>
+                    <th>tgl bayar</th>
                     <th>Keterangan</th>
                 </tr>
             </thead>
@@ -119,9 +121,42 @@
                         $pagePpn   += $inv->ppn;
                         $pageGrand += $inv->grand_total;
                         $pageQty   += $qty;
+                        
+                        $paid = $inv->paymentDetails->sum('subtotal');
+    $sisa = $inv->grand_total - $paid;
+
+    // Warna baris
+    if ($paid == 0) {
+        $rowClass = 'text-danger fw-bold';
+    } elseif ($sisa > 0) {
+        $rowClass = 'text-warning fw-bold';
+    } else {
+        $rowClass = 'text-success fw-bold';
+    }
+
+    // Ambil pembayaran terakhir
+    $lastPaymentDetail = $inv->paymentDetails
+        ->sortByDesc(fn($pd) => $pd->payment->created_at ?? null)
+        ->first();
+
+    $ket = $lastPaymentDetail?->payment?->keterangan ?? '';
+$tglBayarRaw = $lastPaymentDetail?->payment?->created_at ?? null;
+
+if (str_contains($ket, 'TF')) {
+    $metode = 'Transfer';
+} elseif (str_contains($ket, 'Cash')) {
+    $metode = 'Cash';
+} else {
+    $metode = '-';
+}
+
+    $tglBayar = $tglBayarRaw ? $tglBayarRaw->format('d-m-Y') : '-';
                     @endphp
 
-                    <tr>
+                    <tr class="{{ $rowClass }} invoice-row"
+    data-id="{{ $inv->id }}"
+    data-no="{{ $inv->no }}"
+    data-supplier="{{ $inv->supplier->nama_supplier ?? '-' }}">
                         <td>{{ $invoices->firstItem() + $index }}</td>
                         <td>{{ $inv->no }}</td>
                         <td>{{ $inv->tgl->format('d-m-Y') }}</td>
@@ -129,7 +164,9 @@
                         <td>{{ number_format($inv->dpp,0,',','.') }}</td>
                         <td>{{ number_format($inv->ppn,0,',','.') }}</td>
                         <td>{{ number_format($inv->grand_total,0,',','.') }}</td>
-                        <td>{{ $qty }}</td>
+                        {{-- <td>{{ $qty }}</td> --}}
+                        <td>{{ $metode ?? '-' }}</td>
+                        <td>{{ $tglBayar ?? '-' }}</td>
                         <td>{{ $inv->keterangan ?? '-' }}</td>
                     </tr>
 
@@ -147,12 +184,51 @@
                     <td>{{ number_format($pageDpp,0,',','.') }}</td>
                     <td>{{ number_format($pagePpn,0,',','.') }}</td>
                     <td>{{ number_format($pageGrand,0,',','.') }}</td>
-                    <td>{{ $pageQty }}</td>
+                    {{-- <td>{{ $pageQty }}</td> --}}
                     <td></td>
                 </tr>
             </tfoot>
             @endif
         </table>
+
+        <!-- MODAL DETAIL PEMBAYARAN -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title">Detail Pembayaran</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <p><strong>No Inv :</strong> <span id="modal-no"></span></p>
+        <p><strong>Supplier :</strong> <span id="modal-supplier"></span></p>
+
+        <hr>
+
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Tgl Bayar</th>
+              <th>Nominal Bayar</th>
+              <th>Metode Bayar</th>
+            </tr>
+          </thead>
+          <tbody id="modal-payment-body">
+              <tr>
+                <td colspan="3" class="text-center text-muted">
+                  Tidak ada pembayaran
+                </td>
+              </tr>
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+  </div>
+</div>
 
 
         {{-- ================= INFO + PAGINATION ================= --}}
@@ -175,4 +251,60 @@
 
     </div>
 </div>
+
+<script>
+document.querySelectorAll('.invoice-row').forEach(row => {
+
+    row.addEventListener('click', function(){
+
+        // highlight selected
+        document.querySelectorAll('.invoice-row')
+            .forEach(r => r.classList.remove('table-primary'));
+
+        this.classList.add('table-primary');
+
+        let invoiceId = this.dataset.id;
+        let no = this.dataset.no;
+        let supplier = this.dataset.supplier;
+
+        document.getElementById('modal-no').innerText = no;
+        document.getElementById('modal-supplier').innerText = supplier;
+
+        fetch(`/api/invoice/${invoiceId}/payments`)
+            .then(res => res.json())
+            .then(data => {
+
+                let tbody = document.getElementById('modal-payment-body');
+                tbody.innerHTML = '';
+
+                if(data.length === 0){
+                    tbody.innerHTML =
+                      `<tr>
+                        <td colspan="3" class="text-center text-muted">
+                          Tidak ada pembayaran
+                        </td>
+                      </tr>`;
+                    return;
+                }
+
+                data.forEach(item => {
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${item.tgl}</td>
+                            <td>${item.nominal}</td>
+                            <td>${item.metode}</td>
+                        </tr>
+                    `;
+                });
+
+            });
+
+        let modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+        modal.show();
+
+    });
+
+});
+</script>
 @endsection

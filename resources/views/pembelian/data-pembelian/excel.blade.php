@@ -9,11 +9,42 @@
             <th>DPP</th>
             <th>PPN</th>
             <th>Total</th>
+            <th>metode bayar</th>
+            <th>Tanggal Bayar</th>
+
         </tr>
     </thead>
     <tbody>
         @foreach($invoices as $i => $inv)
-        <tr>
+        @php
+    $paid = $inv->paymentDetails->sum('subtotal');
+    $sisa = $inv->grand_total - $paid;
+
+    if ($paid == 0) {
+        $color = 'red';
+    } elseif ($sisa > 0) {
+        $color = 'orange';
+    } else {
+        $color = 'green';
+    }
+
+    $lastPaymentDetail = $inv->paymentDetails
+        ->sortByDesc(fn($pd) => $pd->payment->created_at ?? null)
+        ->first();
+
+    $ket = $lastPaymentDetail?->payment?->keterangan ?? '';
+
+    if (str_contains($ket, 'TF')) {
+        $metode = 'Transfer';
+    } elseif (str_contains($ket, 'Cash')) {
+        $metode = 'Cash';
+    } else {
+        $metode = '-';
+    }
+
+    $tglBayar = $lastPaymentDetail?->payment?->created_at?->format('d-m-Y') ?? '-';
+@endphp
+        <tr style="color: {{ $color }}; font-weight:bold;">
             <td>{{ $i+1 }}</td>
             <td>{{ $inv->no }}</td>
             <td>{{ $inv->tgl->format('d-m-Y') }}</td>
@@ -21,6 +52,8 @@
             <td>{{ number_format($inv->dpp,0,',','.') }}</td>
             <td>{{ number_format($inv->ppn,0,',','.') }}</td>
             <td>{{ number_format($inv->grand_total,0,',','.') }}</td>
+            <td>{{ $metode }}</td>
+            <td>{{ $tglBayar }}</td>
         </tr>
         @endforeach
     </tbody>

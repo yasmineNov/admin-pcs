@@ -167,47 +167,167 @@ public function dataPenjualan(Request $request)
 {
     $query = Invoice::with([
         'customer',
-        'details.orderDetail'
-    ])->where('type','out');
+        'details.orderDetail',
+        'paymentDetails.payment'
+    ])->where('type', Invoice::TYPE_KELUAR);
 
-    // ================= FILTER TANGGAL =================
-    if ($request->filled('from')) {
-        $query->whereDate('tgl','>=',$request->from);
+    // Filter tanggal
+    if ($request->from && $request->to) {
+        $query->whereBetween('tgl', [
+            Carbon::parse($request->from),
+            Carbon::parse($request->to)
+        ]);
     }
 
-    if ($request->filled('to')) {
-        $query->whereDate('tgl','<=',$request->to);
+    // Filter customer
+    if ($request->customer_id) {
+        $query->where('customer_id', $request->customer_id);
     }
 
-    // ================= FILTER CUSTOMER =================
-    if ($request->filled('customer_id')) {
-        $query->where('customer_id',$request->customer_id);
+    // 🔎 Search
+    if ($request->search) {
+        $query->where(function ($q) use ($request) {
+            $q->where('no', 'like', '%' . $request->search . '%')
+              ->orWhere('keterangan', 'like', '%' . $request->search . '%')
+              ->orWhereHas('customer', function ($c) use ($request) {
+                  $c->where('nama_customer', 'like', '%' . $request->search . '%');
+              });
+        });
     }
 
-    // ================= TOTAL KESELURUHAN =================
-    $totalAllDpp   = (clone $query)->sum('dpp');
-    $totalAllPpn   = (clone $query)->sum('ppn');
-    $totalAllGrand = (clone $query)->sum('grand_total');
+    // Clone query untuk summary
+    $summaryQuery = clone $query;
 
-    // ================= PAGINATION =================
-    $invoices = $query->latest()
+    // Pagination
+    $invoices = $query->orderBy('tgl', 'desc')
                       ->paginate(10)
                       ->withQueryString();
 
-    $customers = Customer::orderBy('nama_customer')->get();
+    // Summary total sesuai filter
+    $totalDpp   = $summaryQuery->sum('dpp');
+    $totalPpn   = $summaryQuery->sum('ppn');
+    $grandTotal = $summaryQuery->sum('grand_total');
 
-    return view('penjualan.data-penjualan.index', [
-        'invoices'      => $invoices,
-        'customers'     => $customers,
-        'totalAllDpp'   => $totalAllDpp,
-        'totalAllPpn'   => $totalAllPpn,
-        'totalAllGrand' => $totalAllGrand,
-    ]);
+    $customers = \App\Models\Customer::orderBy('nama_customer')->get();
+
+    return view('penjualan.data-penjualan.index', compact(
+        'invoices',
+        'totalDpp',
+        'totalPpn',
+        'grandTotal',
+        'customers'
+    ));
+}
+//modal data pembelian
+public function getPayments($id)
+{
+    $invoice = Invoice::with('paymentDetails.payment')->findOrFail($id);
+
+    $data = [];
+
+    foreach ($invoice->paymentDetails as $pd) {
+
+        $payment = $pd->payment;
+
+        $ket = $payment->keterangan ?? '';
+
+        // Ambil metode dari keterangan
+        if (str_contains($ket, 'TF')) {
+            $metode = 'Transfer';
+        } elseif (str_contains($ket, 'Cash')) {
+            $metode = 'Cash';
+        } else {
+            $metode = '-';
+        }
+
+        $data[] = [
+            'tgl' => $payment->created_at->format('d-m-Y'),
+            'nominal' => number_format($pd->subtotal,0,',','.'),
+            'metode' => $metode
+        ];
+    }
+
+    return response()->json($data);
+}
+
+// public function dataPenjualan(Request $request)
+// {
+//     $query = Invoice::with([
+//         'customer',
+//         'details.orderDetail'
+//     ])->where('type','out');
+
+//     // ================= FILTER TANGGAL =================
+//     if ($request->filled('from')) {
+//         $query->whereDate('tgl','>=',$request->from);
+//     }
+
+//     if ($request->filled('to')) {
+//         $query->whereDate('tgl','<=',$request->to);
+//     }
+
+//     // ================= FILTER CUSTOMER =================
+//     if ($request->filled('customer_id')) {
+//         $query->where('customer_id',$request->customer_id);
+//     }
+
+//     // ================= TOTAL KESELURUHAN =================
+//     $totalAllDpp   = (clone $query)->sum('dpp');
+//     $totalAllPpn   = (clone $query)->sum('ppn');
+//     $totalAllGrand = (clone $query)->sum('grand_total');
+
+//     // ================= PAGINATION =================
+//     $invoices = $query->latest()
+//                       ->paginate(10)
+//                       ->withQueryString();
+
+//     $customers = Customer::orderBy('nama_customer')->get();
+
+//     return view('penjualan.data-penjualan.index', [
+//         'invoices'      => $invoices,
+//         'customers'     => $customers,
+//         'totalAllDpp'   => $totalAllDpp,
+//         'totalAllPpn'   => $totalAllPpn,
+//         'totalAllGrand' => $totalAllGrand,
+//     ]);
+// }
+//modal data penjualan
+public function getPaymentsPiutang($id)
+{
+    $invoice = Invoice::with('paymentDetails.payment')->findOrFail($id);
+
+    $data = [];
+
+    foreach ($invoice->paymentDetails as $pd) {
+
+        $payment = $pd->payment;
+
+        // pastikan hanya payment type IN
+        if ($payment->type !== 'in') continue;
+
+        $ket = $payment->keterangan ?? '';
+
+        if (str_contains($ket, 'TF')) {
+            $metode = 'Transfer';
+        } elseif (str_contains($ket, 'Cash')) {
+            $metode = 'Cash';
+        } else {
+            $metode = '-';
+        }
+
+        $data[] = [
+            'tgl' => $payment->created_at->format('d-m-Y'),
+            'nominal' => number_format($pd->subtotal,0,',','.'),
+            'metode' => $metode
+        ];
+    }
+
+    return response()->json($data);
 }
 
 public function exportPenjualan(Request $request)
 {
-    $query = Invoice::with('customer')
+    $query = Invoice::with('customer','paymentDetails.payment')
         ->where('type', Invoice::TYPE_KELUAR);
 
     if ($request->filled('from') && $request->filled('to')) {
@@ -236,7 +356,7 @@ public function exportPenjualan(Request $request)
 }
 public function printPenjualan(Request $request)
 {
-    $query = Invoice::with('customer')
+    $query = Invoice::with('customer','paymentDetails.payment')
         ->where('type', Invoice::TYPE_KELUAR);
 
     if ($request->filled('from') && $request->filled('to')) {
@@ -263,7 +383,7 @@ public function printPenjualan(Request $request)
 
 public function exportPembelian(Request $request)
 {
-    $query = Invoice::with('supplier')
+    $query = Invoice::with('supplier','paymentDetails.payment')
         ->where('type', Invoice::TYPE_MASUK);
 
     if ($request->filled('from') && $request->filled('to')) {
@@ -293,7 +413,7 @@ public function exportPembelian(Request $request)
 
 public function printPembelian(Request $request)
 {
-    $query = Invoice::with('supplier')
+    $query = Invoice::with('supplier','paymentDetails.payment')
         ->where('type', Invoice::TYPE_MASUK);
 
     if ($request->filled('from') && $request->filled('to')) {
@@ -403,7 +523,7 @@ public function bayarHutang(Request $request)
         // Buat header payment
         $payment = Payment::create([
             'total' => $request->jumlah_bayar,
-            'keterangan' => 'Pelunasan Hutang',
+            'keterangan' => 'Pelunasan Hutang - ' . $request->metode,
             'type' => 'out',
             'supplier_id' => $supplierId,
             'customer_id' => null,
@@ -540,8 +660,8 @@ public function bayarPiutang(Request $request)
         // Buat payment (uang masuk)
         $payment = Payment::create([
             'total' => $request->jumlah_bayar,
-            'keterangan' => 'Pelunasan Piutang',
-            'type' => 'in', // ✅ uang masuk
+            'keterangan' => 'Pelunasan Piutang - ' . $request->metode,
+            'type' => 'in', 
             'customer_id' => $customerId,
             'supplier_id' => null,
         ]);

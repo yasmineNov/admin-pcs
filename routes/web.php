@@ -201,18 +201,31 @@ Route::get('/penjualan/data/print', [InvoiceController::class, 'printPenjualan']
 |--------------------------------------------------------------------------
 */
 
+<<<<<<< Updated upstream
 Route::get('/pembelian/data-pembelian', [InvoiceController::class, 'dataPembelian'])->name('pembelian.data-pembelian.index');
 Route::get('/pembelian/data-pembelian/export', [InvoiceController::class, 'exportPembelian'])->name('pembelian.data-pembelian.export');
 Route::get('/pembelian/data-pembelian/print', [InvoiceController::class, 'printPembelian'])->name('pembelian.data-pembelian.print');
 
+=======
+Route::get('/pembelian/data-pembelian',[InvoiceController::class, 'dataPembelian'])->name('pembelian.data-pembelian.index');
+Route::get('/pembelian/data-pembelian/export',[InvoiceController::class, 'exportPembelian'])->name('pembelian.data-pembelian.export');
+Route::get('/pembelian/data-pembelian/print',[InvoiceController::class, 'printPembelian'])->name('pembelian.data-pembelian.print');
+Route::get('/api/invoice/{id}/payments', [InvoiceController::class, 'getPayments']);
+>>>>>>> Stashed changes
 /*
 |--------------------------------------------------------------------------
-| DATA PEMBELIAN
+| DATA PENJUALAN
 |--------------------------------------------------------------------------
 */
 Route::get('/penjualan/data-penjualan', [InvoiceController::class, 'dataPenjualan'])->name('penjualan.data-penjualan.index');
+<<<<<<< Updated upstream
 Route::get('/penjualan/data-penjualan/export', [InvoiceController::class, 'exportPenjualan'])->name('penjualan.data-penjualan.export');
 Route::get('/penjualan/data-penjualan/print', [InvoiceController::class, 'printPenjualan'])->name('penjualan.data-penjualan.print');
+=======
+Route::get('/penjualan/data-penjualan/export',[InvoiceController::class, 'exportPenjualan'])->name('penjualan.data-penjualan.export');
+Route::get('/penjualan/data-penjualan/print',[InvoiceController::class, 'printPenjualan'])->name('penjualan.data-penjualan.print');
+Route::get('/api/piutang/{id}/payments', [InvoiceController::class, 'getPaymentsPiutang']);
+>>>>>>> Stashed changes
 
 /*
 |--------------------------------------------------------------------------
