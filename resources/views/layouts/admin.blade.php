@@ -5,6 +5,9 @@
     <title>Admin PCS</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    {{-- logo tab browser --}}
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+
     <link rel="stylesheet" href="{{ asset('adminlte/plugins/fontawesome-free/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('adminlte/dist/css/adminlte.min.css') }}">
 </head>
