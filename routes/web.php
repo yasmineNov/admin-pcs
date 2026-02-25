@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\AbsensiController;
+use App\Http\Controllers\PremiUserController;
+use App\Http\Controllers\SewaKendaraanController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
@@ -191,9 +194,9 @@ Route::get('/penjualan/data/print', [InvoiceController::class, 'printPenjualan']
 |--------------------------------------------------------------------------
 */
 
-Route::get('/pembelian/data-pembelian',[InvoiceController::class, 'dataPembelian'])->name('pembelian.data-pembelian.index');
-Route::get('/pembelian/data-pembelian/export',[InvoiceController::class, 'exportPembelian'])->name('pembelian.data-pembelian.export');
-Route::get('/pembelian/data-pembelian/print',[InvoiceController::class, 'printPembelian'])->name('pembelian.data-pembelian.print');
+Route::get('/pembelian/data-pembelian', [InvoiceController::class, 'dataPembelian'])->name('pembelian.data-pembelian.index');
+Route::get('/pembelian/data-pembelian/export', [InvoiceController::class, 'exportPembelian'])->name('pembelian.data-pembelian.export');
+Route::get('/pembelian/data-pembelian/print', [InvoiceController::class, 'printPembelian'])->name('pembelian.data-pembelian.print');
 
 /*
 |--------------------------------------------------------------------------
@@ -201,26 +204,49 @@ Route::get('/pembelian/data-pembelian/print',[InvoiceController::class, 'printPe
 |--------------------------------------------------------------------------
 */
 Route::get('/penjualan/data-penjualan', [InvoiceController::class, 'dataPenjualan'])->name('penjualan.data-penjualan.index');
-Route::get('/penjualan/data-penjualan/export',[InvoiceController::class, 'exportPenjualan'])->name('penjualan.data-penjualan.export');
-Route::get('/penjualan/data-penjualan/print',[InvoiceController::class, 'printPenjualan'])->name('penjualan.data-penjualan.print');
+Route::get('/penjualan/data-penjualan/export', [InvoiceController::class, 'exportPenjualan'])->name('penjualan.data-penjualan.export');
+Route::get('/penjualan/data-penjualan/print', [InvoiceController::class, 'printPenjualan'])->name('penjualan.data-penjualan.print');
 
 /*
 |--------------------------------------------------------------------------
 | HUTANG
 |--------------------------------------------------------------------------
 */
-Route::get('/pembelian/hutang',[InvoiceController::class, 'laporanHutang'])->name('pembelian.hutang.index');
-Route::get('/api/hutang/{supplierId}',[InvoiceController::class, 'getHutangDetail']);
-Route::post('/pembelian/hutang/bayar',[InvoiceController::class, 'bayarHutang'])->name('pembelian.hutang.bayar');
+Route::get('/pembelian/hutang', [InvoiceController::class, 'laporanHutang'])->name('pembelian.hutang.index');
+Route::get('/api/hutang/{supplierId}', [InvoiceController::class, 'getHutangDetail']);
+Route::post('/pembelian/hutang/bayar', [InvoiceController::class, 'bayarHutang'])->name('pembelian.hutang.bayar');
 
 /*
 |--------------------------------------------------------------------------
 | HUTANG
 |--------------------------------------------------------------------------
 */
-Route::get('/penjualan/piutang',[InvoiceController::class, 'laporanPiutang'])->name('penjualan.piutang.index');
-Route::get('/api/piutang/{customerId}',[InvoiceController::class, 'getPiutangDetail']);
-Route::post('/penjualan/piutang/bayar',[InvoiceController::class, 'bayarPiutang'])->name('penjualan.piutang.bayar');
+Route::get('/penjualan/piutang', [InvoiceController::class, 'laporanPiutang'])->name('penjualan.piutang.index');
+Route::get('/api/piutang/{customerId}', [InvoiceController::class, 'getPiutangDetail']);
+Route::post('/penjualan/piutang/bayar', [InvoiceController::class, 'bayarPiutang'])->name('penjualan.piutang.bayar');
+
+/*
+|--------------------------------------------------------------------------
+| ABSESNSI
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('absensi')->name('absensi.')->group(function () {
+
+    // Route untuk Absen Karyawan
+    Route::get('absen-karyawan', [AbsensiController::class, 'index'])->name('absen-karyawan.index');
+    Route::post('absen-karyawan', [AbsensiController::class, 'store'])->name('absen-karyawan.store');
+
+    // INI YANG KURANG: Route untuk Handle AJAX Detail
+    Route::get('absen-karyawan/detail/{id}', [AbsensiController::class, 'getDetail'])->name('absen-karyawan.detail');
+
+    // Route untuk Premi Hadir
+    Route::get('premi-hadir', [AbsensiController::class, 'premiIndex'])->name('premi-hadir.index');
+
+    // Route Resource lainnya
+    Route::resource('premi-karyawan', PremiUserController::class);
+    Route::resource('sewa-kendaraan', SewaKendaraanController::class);
+});
 
 /*
 |--------------------------------------------------------------------------
