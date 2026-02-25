@@ -213,6 +213,9 @@ Route::get('/pembelian/data-pembelian/print',[InvoiceController::class, 'printPe
 Route::get('/api/invoice/{id}/payments', [InvoiceController::class, 'getPayments']);
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -233,6 +236,9 @@ Route::get('/penjualan/data-penjualan/print',[InvoiceController::class, 'printPe
 Route::get('/api/piutang/{id}/payments', [InvoiceController::class, 'getPaymentsPiutang']);
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
