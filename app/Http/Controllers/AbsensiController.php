@@ -38,20 +38,51 @@ class AbsensiController extends Controller
             'kehadiran' => 'required|array',
         ]);
 
+        // Cek user yang nominal premi/sewa kosong
+        $warningUsers = [];
+        foreach ($request->kehadiran as $userId => $dates) {
+            $user = User::find($userId); // ambil data user dari DB
+            $masterPremi = PremiUser::where('user_id', $userId)->first();
+            $nominalPremi = $masterPremi ? $masterPremi->nominal : null;
+
+            $masterSewa = SewaKendaraan::where('user_id', $userId)->first();
+            $nominalSewa = $masterSewa ? $masterSewa->nominal : null;
+
+            if (is_null($nominalPremi) || is_null($nominalSewa)) {
+                $warningUsers[] = [
+                    'user_id' => $userId,
+                    'name' => $user ? $user->name : 'User ' . $userId, // ambil nama dari tabel users
+                    'nominal_premi' => $nominalPremi,
+                    'nominal_sewa' => $nominalSewa,
+                ];
+            }
+        }
+
+        // Kalau ada warning, return JSON (buat JS handle)
+        if (!empty($warningUsers)) {
+            return response()->json([
+                'status' => 'warning',
+                'message' => 'Beberapa user memiliki nominal premi/sewa kosong.',
+                'users' => $warningUsers,
+            ]);
+        }
+
+        // Kalau aman, lanjut simpan
+        return $this->commitAbsensi($request);
+    }
+
+    // Fungsi pisah buat simpan data
+    protected function commitAbsensi($request)
+    {
         DB::beginTransaction();
         try {
-            // 1. Simpan Header Absensi
             $absensi = Absensi::create([
                 'tanggal_mulai' => $request->start_date,
                 'tanggal_akhir' => $request->end_date,
-                'keterangan' => "Absensi Periode " . $request->start_date . " s/d " . $request->end_date,
+                'keterangan' => "Absensi Periode {$request->start_date} s/d {$request->end_date}",
             ]);
 
-
-            // 2. Loop per User dari input checkbox
             foreach ($request->kehadiran as $userId => $dates) {
-
-                // LOOP PER TANGGAL
                 foreach ($dates as $tanggal) {
                     AbsensiUser::create([
                         'absensi_id' => $absensi->id,
@@ -68,39 +99,32 @@ class AbsensiController extends Controller
                 $masterSewa = SewaKendaraan::where('user_id', $userId)->first();
                 $nominalSewa = $masterSewa ? $masterSewa->nominal : 0;
 
-                $subtotalPremi = $totalHadir * $nominalPremi;
-                $subtotalSewa = $totalHadir * $nominalSewa;
-                $totalAkhir = $subtotalPremi + $subtotalSewa;
-                // dd([
-                //     'user_id' => $userId,
-                //     'dates' => $dates,
-                //     'total_hadir' => $totalHadir,
-                //     'master_premi' => $masterPremi,
-                //     'nominal_premi' => $nominalPremi,
-                //     'master_sewa' => $masterSewa,
-                //     'nominal_sewa' => $nominalSewa,
-                // ]);
                 PremiHadir::create([
                     'user_id' => $userId,
                     'absensi_id' => $absensi->id,
                     'total_hadir' => $totalHadir,
                     'nominal_premi_harian' => $nominalPremi,
                     'nominal_sewa_harian' => $nominalSewa,
-                    'subtotal_premi' => $subtotalPremi,
-                    'subtotal_sewa' => $subtotalSewa,
-                    'total_keseluruhan' => $totalAkhir,
-                    'status' => 'pending'
+                    'subtotal_premi' => $totalHadir * $nominalPremi,
+                    'subtotal_sewa' => $totalHadir * $nominalSewa,
+                    'total_keseluruhan' => $totalHadir * ($nominalPremi + $nominalSewa),
+                    'status' => 'pending',
                 ]);
             }
 
             DB::commit();
-            return redirect()->route('absensi.absen-karyawan.index')->with('success', 'Absensi dan Premi berhasil dihitung!');
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Absensi dan Premi berhasil dihitung!',
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ]);
         }
     }
-
     public function premiIndex()
     {
         $absensis = Absensi::with('premiHadirs')

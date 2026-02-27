@@ -62,7 +62,7 @@
                         </table>
                     </div>
                     <div class="card-footer">
-                        <button type="submit" class="btn btn-success float-right">Simpan Absensi & Hitung Premi</button>
+                        <button class="btn btn-success float-right">Simpan Absensi & Hitung Premi</button>
                     </div>
                 </div>
             </form>
@@ -165,6 +165,38 @@
                         let userId = $(this).data('userid');
                         let totalHadir = $('.cb-hadir[data-userid="' + userId + '"]:checked').length;
                         $('#count-' + userId).text(totalHadir);
+                    });
+                });
+            });
+
+            $(document).ready(function () {
+                $('form[action="{{ route('absensi.absen-karyawan.store') }}"]').on('submit', function (e) {
+                    e.preventDefault();
+                    let form = $(this);
+                    let data = form.serialize();
+
+                    $.post(form.attr('action'), data, function (res) {
+                        if (res.status === 'warning') {
+                            let msg = res.message + "\n";
+                            res.users.forEach(u => {
+                                msg += `- ${u.name}: Premi ${u.nominal_premi ?? 'null'}, Sewa ${u.nominal_sewa ?? 'null'}\n`;
+                            });
+                            if (confirm(msg + "\nTetap lanjut simpan?")) {
+                                // Kalau user pilih lanjut, kirim lagi pakai flag
+                                data += '&force=1';
+                                $.post(form.attr('action'), data, function (res2) {
+                                    alert(res2.message);
+                                    if (res2.status === 'success') {
+                                        location.reload();
+                                    }
+                                });
+                            }
+                        } else if (res.status === 'success') {
+                            alert(res.message);
+                            location.reload();
+                        } else if (res.status === 'error') {
+                            alert(res.message);
+                        }
                     });
                 });
             });
