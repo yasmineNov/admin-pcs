@@ -1,49 +1,128 @@
 @extends('layouts.admin')
 
 @section('content')
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Daftar Kalkulasi Premi & Sewa Kendaraan</h3>
-        </div>
+    <div class="container-fluid">
+
+
         <div class="card-body">
             <table class="table table-bordered table-striped">
                 <thead class="thead-dark">
                     <tr>
-                        <th>Karyawan</th>
                         <th>Periode</th>
-                        <th class="text-center">Hadir</th>
-                        <th class="text-right">Premi</th>
-                        <th class="text-right">Sewa</th>
-                        <th class="text-right">Total Keseluruhan</th>
-                        <th class="text-center">Status</th>
+                        <th class="text-right">Total Premi</th>
+                        <th class="text-right">Total Sewa</th>
+                        <th class="text-right">Grand Total</th>
+                        <th class="text-center">Jumlah Karyawan</th>
+                        <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($premis as $p)
+                    @forelse($absensis as $a)
+
+                        @php
+                            $totalPremi = $a->premiHadirs->sum('subtotal_premi');
+                            $totalSewa = $a->premiHadirs->sum('subtotal_sewa');
+                            $grandTotal = $a->premiHadirs->sum('total_keseluruhan');
+                            $totalUser = $a->premiHadirs->count();
+                        @endphp
+
                         <tr>
-                            <td>{{ $p->user->name }}</td>
-                            <td><small>{{ $p->absensi->tanggal_mulai }} - {{ $p->absensi->tanggal_akhir }}</small></td>
-                            <td class="text-center">{{ $p->total_hadir }} hari</td>
-                            <td class="text-right">Rp {{ number_format($p->subtotal_premi) }}</td>
-                            <td class="text-right">Rp {{ number_format($p->subtotal_sewa) }}</td>
-                            <td class="text-right font-weight-bold text-primary">Rp {{ number_format($p->total_keseluruhan) }}
+                            <td>
+                                {{ $a->tanggal_mulai }} s/d {{ $a->tanggal_akhir }}
                             </td>
+
+                            <td class="text-right">
+                                Rp {{ number_format($totalPremi, 0, ',', '.') }}
+                            </td>
+
+                            <td class="text-right">
+                                Rp {{ number_format($totalSewa, 0, ',', '.') }}
+                            </td>
+
+                            <td class="text-right font-weight-bold text-primary">
+                                Rp {{ number_format($grandTotal, 0, ',', '.') }}
+                            </td>
+
                             <td class="text-center">
-                                <span class="badge {{ $p->status == 'pending' ? 'badge-warning' : 'badge-success' }}">
-                                    {{ strtoupper($p->status) }}
-                                </span>
+                                {{ $totalUser }} Orang
+                            </td>
+
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-info btn-detail" data-id="{{ $a->id }}">
+                                    <i class="fas fa-eye"></i> Detail
+                                </button>
                             </td>
                         </tr>
+
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center">Belum ada data premi.</td>
+                            <td colspan="6" class="text-center">
+                                Belum ada data premi.
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
+
             <div class="mt-3">
-                {{ $premis->links() }}
+                {{ $absensis->links() }}
             </div>
         </div>
     </div>
+@endsection
+
+<div class="modal fade" id="modalDetail" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info">
+                <h5 class="modal-title text-white">Detail Premi per Karyawan</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div id="modalBody" class="modal-body">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2">Memuat data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section('scripts')
+    <script>
+        $(document).ready(function () {
+
+            $(document).on('click', '.btn-detail', function (e) {
+                e.preventDefault();
+
+                let id = $(this).data('id');
+
+                $('#modalDetail').modal('show');
+
+                $('#modalBody').html(`
+                                    <div class="text-center py-5">
+                                        <div class="spinner-border text-primary"></div>
+                                        <p class="mt-2">Memuat data...</p>
+                                    </div>
+                                `);
+
+                $.ajax({
+                    url: "{{ url('absensi/premi-hadir/detail') }}/" + id,
+                    type: "GET",
+                    success: function (response) {
+                        $('#modalBody').html(response);
+                    },
+                    error: function (xhr) {
+                        $('#modalBody').html(
+                            '<div class="alert alert-danger">Gagal mengambil data.</div>'
+                        );
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+
+        });
+    </script>
 @endsection

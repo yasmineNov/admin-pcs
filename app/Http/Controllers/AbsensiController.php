@@ -50,23 +50,36 @@ class AbsensiController extends Controller
 
             // 2. Loop per User dari input checkbox
             foreach ($request->kehadiran as $userId => $dates) {
-                // Di dalam looping foreach ($request->kehadiran as $userId => $dates)
+
+                // LOOP PER TANGGAL
+                foreach ($dates as $tanggal) {
+                    AbsensiUser::create([
+                        'absensi_id' => $absensi->id,
+                        'user_id' => $userId,
+                        'tanggal' => $tanggal,
+                    ]);
+                }
 
                 $totalHadir = count($dates);
 
-                // Ambil Master Premi (Premi User)
                 $masterPremi = PremiUser::where('user_id', $userId)->first();
                 $nominalPremi = $masterPremi ? $masterPremi->nominal : 0;
 
-                // Ambil Master Sewa Kendaraan (Cek jika ada)
                 $masterSewa = SewaKendaraan::where('user_id', $userId)->first();
-                $nominalSewa = $masterSewa ? $masterSewa->nominal : 0; // Jika tidak ada, set ke 0
+                $nominalSewa = $masterSewa ? $masterSewa->nominal : 0;
 
-                // Kalkulasi rincian
                 $subtotalPremi = $totalHadir * $nominalPremi;
                 $subtotalSewa = $totalHadir * $nominalSewa;
                 $totalAkhir = $subtotalPremi + $subtotalSewa;
-
+                // dd([
+                //     'user_id' => $userId,
+                //     'dates' => $dates,
+                //     'total_hadir' => $totalHadir,
+                //     'master_premi' => $masterPremi,
+                //     'nominal_premi' => $nominalPremi,
+                //     'master_sewa' => $masterSewa,
+                //     'nominal_sewa' => $nominalSewa,
+                // ]);
                 PremiHadir::create([
                     'user_id' => $userId,
                     'absensi_id' => $absensi->id,
@@ -90,23 +103,40 @@ class AbsensiController extends Controller
 
     public function premiIndex()
     {
-        // Mengambil data premi beserta relasi user dan header absensinya
-        $premis = PremiHadir::with(['user', 'absensi'])
+        $absensis = Absensi::with('premiHadirs')
             ->latest()
             ->paginate(10);
 
-        return view('absensi.premi-hadir.index', compact('premis'));
+        return view('absensi.premi-hadir.index', compact('absensis'));
+    }
+    public function detailPremi($id)
+    {
+        $absensi = Absensi::with(['premiHadirs.user'])
+            ->findOrFail($id);
+
+        return view('absensi.premi-hadir.detail', compact('absensi'));
     }
 
     public function getDetail($id)
     {
-        // Mengambil data ringkasan kehadiran per user untuk satu sesi absensi tertentu
         $absensi = Absensi::findOrFail($id);
-        $details = PremiHadir::with('user')
-            ->where('absensi_id', $id)
-            ->get();
+
+        $period = CarbonPeriod::create(
+            $absensi->tanggal_mulai,
+            $absensi->tanggal_akhir
+        );
+
+        $users = User::all();
+
+        $absenDetails = AbsensiUser::where('absensi_id', $id)->get();
+
 
         // Kita return sebagai HTML partial agar mudah dimasukkan ke dalam modal
-        return view('absensi.absen-karyawan.detail_partial', compact('absensi', 'details'))->render();
+        return view('absensi.absen-karyawan.detail_partial', compact(
+            'absensi',
+            'period',
+            'users',
+            'absenDetails'
+        ))->render();
     }
 }

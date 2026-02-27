@@ -71,14 +71,13 @@
         @endif
     </div>
 @endsection
-@push('scripts')
+
+@section('scripts')
     <script>
-        $(document).ready(function () {
-            $('.absensi-check').on('change', function () {
-                let userId = $(this).data('user-id');
-                let totalHadir = $(`.absensi-check[data-user-id="${userId}"]:checked`).length;
-                $(`#total-${userId}`).text(totalHadir);
-            });
+        $(document).on('change', '.absensi-check', function () {
+            let userId = $(this).data('user-id');
+            let totalHadir = $('.absensi-check[data-user-id="' + userId + '"]:checked').length;
+            $('#total-' + userId).text(totalHadir);
         });
     </script>
-@endpush
+@endsection

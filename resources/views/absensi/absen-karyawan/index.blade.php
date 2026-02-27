@@ -160,6 +160,13 @@
                         }
                     });
                 });
+                $(document).ready(function () {
+                    $(document).on('change', '.cb-hadir', function () {
+                        let userId = $(this).data('userid');
+                        let totalHadir = $('.cb-hadir[data-userid="' + userId + '"]:checked').length;
+                        $('#count-' + userId).text(totalHadir);
+                    });
+                });
             });
         </script>
     @endsection
