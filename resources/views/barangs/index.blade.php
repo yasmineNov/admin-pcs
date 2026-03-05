@@ -29,6 +29,7 @@
                             <th>Nama Barang</th>
                             <th style="width: 20%;">Supplier</th>
                             <th style="width: 90px;" class="text-center">Stok</th>
+                            <th style="width:120px;">Harga Jual</th>
                             <th style="width: 170px;">Aksi</th>
                         </tr>
                     </thead>
@@ -39,6 +40,11 @@
                                 <td>{{ $b->nama_barang }}</td>
                                 <td>{{ $b->supplier->nama_supplier ?? '-' }}</td>
                                 <td>{{ $b->stok }} roll</td>
+                                <td>
+                                    <a href="{{ route('barang.harga.index', $b->id) }}" class="btn btn-info btn-sm">
+                                        Harga
+                                    </a>
+                                </td>
                                 <td>
                                     <div class="d-flex gap-1">
                                         <a href="{{ route('barang.edit', $b->id) }}" class="btn btn-warning btn-sm">Edit</a>

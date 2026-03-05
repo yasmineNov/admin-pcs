@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AbsensiController;
+use App\Http\Controllers\BarangHargaController;
 use App\Http\Controllers\PremiUserController;
 use App\Http\Controllers\SewaKendaraanController;
 use Illuminate\Support\Facades\Route;
@@ -310,6 +311,17 @@ Route::get(
 //modal ROUTEE
 
 
+/*
+|--------------------------------------------------------------------------
+|Harga
+|--------------------------------------------------------------------------
+*/
+Route::prefix('barang/{barang}')->group(function () {
+    Route::get('/harga', [BarangHargaController::class, 'index'])->name('barang.harga.index');
+    Route::post('/harga', [BarangHargaController::class, 'store'])->name('barang.harga.store');
+    Route::delete('/harga/{id}', [BarangHargaController::class, 'destroy'])->name('barang.harga.destroy');
+});
+    Route::get('/get-harga-barang', [App\Http\Controllers\BarangHargaController::class, 'getHargaAjax'])->name('barang.get-harga');
 
 
 
