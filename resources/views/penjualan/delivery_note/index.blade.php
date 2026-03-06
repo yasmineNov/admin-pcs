@@ -125,7 +125,7 @@
             btn.addEventListener('click', function () {
                 let id = this.dataset.id;
 
-                fetch('/dnpo/' + id)
+                fetch('/dnso/' + id)
                     .then(res => res.text())
                     .then(data => {
                         document.getElementById('detailContent').innerHTML = data;

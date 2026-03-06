@@ -8,6 +8,7 @@ use App\Models\DeliveryNoteDetail;
 use App\Models\Orders;
 use App\Models\OrderDetail;
 use App\Models\Barang;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class DeliveryNoteController extends Controller
 {
@@ -360,11 +361,26 @@ class DeliveryNoteController extends Controller
     public function showDetailSO($id)
     {
         $dn = DeliveryNote::with([
-            'order.supplier',
+            'order.customer',
             'details.orderDetail.barang'
         ])->findOrFail($id);
 
-        return view('penjualan.surat-jalan.detail', compact('dn'));
+        return view('penjualan.delivery_note.detail', compact('dn'));
+    }
+
+
+    public function print($id)
+    {
+        $dn = DeliveryNote::with([
+            'order.customer',
+            'details.orderDetail.barang'
+        ])->findOrFail($id);
+
+        $pdf = Pdf::loadView('penjualan.delivery_note.print', compact('dn'));
+
+        $filename = 'SuratJalan-' . str_replace(['/', '\\'], '-', $dn->no) . '.pdf';
+
+        return $pdf->stream($filename);
     }
 
     //ADDITIONAL

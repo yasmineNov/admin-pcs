@@ -13,6 +13,7 @@ use App\Models\DeliveryNote;
 use App\Models\Customer;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceController extends Controller
 {
@@ -21,269 +22,269 @@ class InvoiceController extends Controller
     // ===========================
 
     public function indexMasuk(Request $request)
-{
-    $query = Invoice::with(['supplier'])
-        ->where('type', 'in');
+    {
+        $query = Invoice::with(['supplier'])
+            ->where('type', 'in');
 
-    // 🔎 Filter tanggal
-    if ($request->filled('from')) {
-        $query->whereDate('tgl', '>=', $request->from);
+        // 🔎 Filter tanggal
+        if ($request->filled('from')) {
+            $query->whereDate('tgl', '>=', $request->from);
+        }
+
+        if ($request->filled('to')) {
+            $query->whereDate('tgl', '<=', $request->to);
+        }
+
+        // 🔎 Filter supplier
+        if ($request->filled('supplier_id')) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        $invoices = $query->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        $suppliers = Supplier::orderBy('nama_supplier')->get();
+
+        return view('pembelian.invoice.index', compact(
+            'invoices',
+            'suppliers'
+        ));
     }
-
-    if ($request->filled('to')) {
-        $query->whereDate('tgl', '<=', $request->to);
-    }
-
-    // 🔎 Filter supplier
-    if ($request->filled('supplier_id')) {
-        $query->where('supplier_id', $request->supplier_id);
-    }
-
-    $invoices = $query->latest()
-                      ->paginate(10)
-                      ->withQueryString();
-
-    $suppliers = Supplier::orderBy('nama_supplier')->get();
-
-    return view('pembelian.invoice.index', compact(
-        'invoices',
-        'suppliers'
-    ));
-}
 
 
 
     public function indexKeluar(Request $request)
-{
-    // ================= QUERY DASAR =================
-    $query = Invoice::with([
-        'customer',
-        'details.orderDetail'
-    ])->where('type', 'out');
+    {
+        // ================= QUERY DASAR =================
+        $query = Invoice::with([
+            'customer',
+            'details.orderDetail'
+        ])->where('type', 'out');
 
 
-    // ================= FILTER TANGGAL =================
-    if ($request->filled('from')) {
-        $query->whereDate('tgl', '>=', $request->from);
+        // ================= FILTER TANGGAL =================
+        if ($request->filled('from')) {
+            $query->whereDate('tgl', '>=', $request->from);
+        }
+
+        if ($request->filled('to')) {
+            $query->whereDate('tgl', '<=', $request->to);
+        }
+
+
+        // ================= FILTER CUSTOMER =================
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+
+        // ================= TOTAL KESELURUHAN (SESUAI FILTER) =================
+        $totalAllDpp = (clone $query)->sum('dpp');
+        $totalAllPpn = (clone $query)->sum('ppn');
+        $totalAllGrand = (clone $query)->sum('grand_total');
+
+
+        // ================= PAGINATION =================
+        $invoices = $query->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+
+        // ================= DATA CUSTOMER =================
+        $customers = Customer::orderBy('nama_customer')->get();
+
+
+        // ================= RETURN VIEW =================
+        return view('penjualan.invoice.index', [
+            'invoices' => $invoices,
+            'customers' => $customers,
+            'totalAllDpp' => $totalAllDpp,
+            'totalAllPpn' => $totalAllPpn,
+            'totalAllGrand' => $totalAllGrand,
+        ]);
     }
-
-    if ($request->filled('to')) {
-        $query->whereDate('tgl', '<=', $request->to);
-    }
-
-
-    // ================= FILTER CUSTOMER =================
-    if ($request->filled('customer_id')) {
-        $query->where('customer_id', $request->customer_id);
-    }
-
-
-    // ================= TOTAL KESELURUHAN (SESUAI FILTER) =================
-    $totalAllDpp   = (clone $query)->sum('dpp');
-    $totalAllPpn   = (clone $query)->sum('ppn');
-    $totalAllGrand = (clone $query)->sum('grand_total');
-
-
-    // ================= PAGINATION =================
-    $invoices = $query->latest()
-                      ->paginate(10)
-                      ->withQueryString();
-
-
-    // ================= DATA CUSTOMER =================
-    $customers = Customer::orderBy('nama_customer')->get();
-
-
-    // ================= RETURN VIEW =================
-    return view('penjualan.invoice.index', [
-        'invoices'      => $invoices,
-        'customers'     => $customers,
-        'totalAllDpp'   => $totalAllDpp,
-        'totalAllPpn'   => $totalAllPpn,
-        'totalAllGrand' => $totalAllGrand,
-    ]);
-}
 
     // ===========================
     // DATA PEMBELIAN
     // ===========================
 
-public function dataPembelian(Request $request)
-{
-    $query = Invoice::with([
-        'supplier',
-        'details.orderDetail'
-    ])->where('type', Invoice::TYPE_MASUK);
+    public function dataPembelian(Request $request)
+    {
+        $query = Invoice::with([
+            'supplier',
+            'details.orderDetail'
+        ])->where('type', Invoice::TYPE_MASUK);
 
-    // Filter tanggal
-    if ($request->from && $request->to) {
-        $query->whereBetween('tgl', [
-            Carbon::parse($request->from),
-            Carbon::parse($request->to)
-        ]);
-    }
-
-    // Filter supplier
-    if ($request->supplier_id) {
-        $query->where('supplier_id', $request->supplier_id);
-    }
-
-    // 🔎 Search
-    if ($request->search) {
-        $query->where(function ($q) use ($request) {
-            $q->where('no', 'like', '%' . $request->search . '%')
-              ->orWhere('keterangan', 'like', '%' . $request->search . '%')
-              ->orWhereHas('supplier', function ($s) use ($request) {
-                  $s->where('nama_supplier', 'like', '%' . $request->search . '%');
-              });
-        });
-    }
-
-    // Clone query untuk summary (agar tidak kepotong pagination)
-    $summaryQuery = clone $query;
-
-    // Pagination
-    $invoices = $query->latest()
-                      ->paginate(10)
-                      ->withQueryString();
-
-    // Summary dari SEMUA hasil filter (bukan cuma 10 data)
-    $totalDpp = $summaryQuery->sum('dpp');
-    $totalPpn = $summaryQuery->sum('ppn');
-    $grandTotal = $summaryQuery->sum('grand_total');
-
-    $suppliers = \App\Models\Supplier::orderBy('nama_supplier')->get();
-
-    return view('pembelian.data-pembelian.index', compact(
-        'invoices',
-        'totalDpp',
-        'totalPpn',
-        'grandTotal',
-        'suppliers'
-    ));
-}
-
-public function dataPenjualan(Request $request)
-{
-    $query = Invoice::with([
-        'customer',
-        'details.orderDetail',
-        'paymentDetails.payment'
-    ])->where('type', Invoice::TYPE_KELUAR);
-
-    // Filter tanggal
-    if ($request->from && $request->to) {
-        $query->whereBetween('tgl', [
-            Carbon::parse($request->from),
-            Carbon::parse($request->to)
-        ]);
-    }
-
-    // Filter customer
-    if ($request->customer_id) {
-        $query->where('customer_id', $request->customer_id);
-    }
-
-    // 🔎 Search
-    if ($request->search) {
-        $query->where(function ($q) use ($request) {
-            $q->where('no', 'like', '%' . $request->search . '%')
-              ->orWhere('keterangan', 'like', '%' . $request->search . '%')
-              ->orWhereHas('customer', function ($c) use ($request) {
-                  $c->where('nama_customer', 'like', '%' . $request->search . '%');
-              });
-        });
-    }
-
-    // Clone query untuk summary
-    $summaryQuery = clone $query;
-
-    // Pagination
-    $invoices = $query->orderBy('tgl', 'desc')
-                      ->paginate(10)
-                      ->withQueryString();
-
-    // Summary total sesuai filter
-    $totalDpp   = $summaryQuery->sum('dpp');
-    $totalPpn   = $summaryQuery->sum('ppn');
-    $grandTotal = $summaryQuery->sum('grand_total');
-
-    $customers = \App\Models\Customer::orderBy('nama_customer')->get();
-
-    return view('penjualan.data-penjualan.index', compact(
-        'invoices',
-        'totalDpp',
-        'totalPpn',
-        'grandTotal',
-        'customers'
-    ));
-}
-//modal data pembelian
-public function getPayments($id)
-{
-    $invoice = Invoice::with('paymentDetails.payment')->findOrFail($id);
-
-    $data = [];
-
-    foreach ($invoice->paymentDetails as $pd) {
-
-        $payment = $pd->payment;
-
-        $ket = $payment->keterangan ?? '';
-
-        // Ambil metode dari keterangan
-        if (str_contains($ket, 'TF')) {
-            $metode = 'Transfer';
-        } elseif (str_contains($ket, 'Cash')) {
-            $metode = 'Cash';
-        } else {
-            $metode = '-';
+        // Filter tanggal
+        if ($request->from && $request->to) {
+            $query->whereBetween('tgl', [
+                Carbon::parse($request->from),
+                Carbon::parse($request->to)
+            ]);
         }
 
-        $data[] = [
-            'tgl' => $payment->created_at->format('d-m-Y'),
-            'nominal' => number_format($pd->subtotal,0,',','.'),
-            'metode' => $metode
-        ];
+        // Filter supplier
+        if ($request->supplier_id) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        // 🔎 Search
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('no', 'like', '%' . $request->search . '%')
+                    ->orWhere('keterangan', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('supplier', function ($s) use ($request) {
+                        $s->where('nama_supplier', 'like', '%' . $request->search . '%');
+                    });
+            });
+        }
+
+        // Clone query untuk summary (agar tidak kepotong pagination)
+        $summaryQuery = clone $query;
+
+        // Pagination
+        $invoices = $query->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        // Summary dari SEMUA hasil filter (bukan cuma 10 data)
+        $totalDpp = $summaryQuery->sum('dpp');
+        $totalPpn = $summaryQuery->sum('ppn');
+        $grandTotal = $summaryQuery->sum('grand_total');
+
+        $suppliers = \App\Models\Supplier::orderBy('nama_supplier')->get();
+
+        return view('pembelian.data-pembelian.index', compact(
+            'invoices',
+            'totalDpp',
+            'totalPpn',
+            'grandTotal',
+            'suppliers'
+        ));
     }
 
-    return response()->json($data);
-}
+    public function dataPenjualan(Request $request)
+    {
+        $query = Invoice::with([
+            'customer',
+            'details.orderDetail',
+            'paymentDetails.payment'
+        ])->where('type', Invoice::TYPE_KELUAR);
 
-// public function dataPenjualan(Request $request)
+        // Filter tanggal
+        if ($request->from && $request->to) {
+            $query->whereBetween('tgl', [
+                Carbon::parse($request->from),
+                Carbon::parse($request->to)
+            ]);
+        }
+
+        // Filter customer
+        if ($request->customer_id) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        // 🔎 Search
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('no', 'like', '%' . $request->search . '%')
+                    ->orWhere('keterangan', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('customer', function ($c) use ($request) {
+                        $c->where('nama_customer', 'like', '%' . $request->search . '%');
+                    });
+            });
+        }
+
+        // Clone query untuk summary
+        $summaryQuery = clone $query;
+
+        // Pagination
+        $invoices = $query->orderBy('tgl', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        // Summary total sesuai filter
+        $totalDpp = $summaryQuery->sum('dpp');
+        $totalPpn = $summaryQuery->sum('ppn');
+        $grandTotal = $summaryQuery->sum('grand_total');
+
+        $customers = \App\Models\Customer::orderBy('nama_customer')->get();
+
+        return view('penjualan.data-penjualan.index', compact(
+            'invoices',
+            'totalDpp',
+            'totalPpn',
+            'grandTotal',
+            'customers'
+        ));
+    }
+    //modal data pembelian
+    public function getPayments($id)
+    {
+        $invoice = Invoice::with('paymentDetails.payment')->findOrFail($id);
+
+        $data = [];
+
+        foreach ($invoice->paymentDetails as $pd) {
+
+            $payment = $pd->payment;
+
+            $ket = $payment->keterangan ?? '';
+
+            // Ambil metode dari keterangan
+            if (str_contains($ket, 'TF')) {
+                $metode = 'Transfer';
+            } elseif (str_contains($ket, 'Cash')) {
+                $metode = 'Cash';
+            } else {
+                $metode = '-';
+            }
+
+            $data[] = [
+                'tgl' => $payment->created_at->format('d-m-Y'),
+                'nominal' => number_format($pd->subtotal, 0, ',', '.'),
+                'metode' => $metode
+            ];
+        }
+
+        return response()->json($data);
+    }
+
+    // public function dataPenjualan(Request $request)
 // {
 //     $query = Invoice::with([
 //         'customer',
 //         'details.orderDetail'
 //     ])->where('type','out');
 
-//     // ================= FILTER TANGGAL =================
+    //     // ================= FILTER TANGGAL =================
 //     if ($request->filled('from')) {
 //         $query->whereDate('tgl','>=',$request->from);
 //     }
 
-//     if ($request->filled('to')) {
+    //     if ($request->filled('to')) {
 //         $query->whereDate('tgl','<=',$request->to);
 //     }
 
-//     // ================= FILTER CUSTOMER =================
+    //     // ================= FILTER CUSTOMER =================
 //     if ($request->filled('customer_id')) {
 //         $query->where('customer_id',$request->customer_id);
 //     }
 
-//     // ================= TOTAL KESELURUHAN =================
+    //     // ================= TOTAL KESELURUHAN =================
 //     $totalAllDpp   = (clone $query)->sum('dpp');
 //     $totalAllPpn   = (clone $query)->sum('ppn');
 //     $totalAllGrand = (clone $query)->sum('grand_total');
 
-//     // ================= PAGINATION =================
+    //     // ================= PAGINATION =================
 //     $invoices = $query->latest()
 //                       ->paginate(10)
 //                       ->withQueryString();
 
-//     $customers = Customer::orderBy('nama_customer')->get();
+    //     $customers = Customer::orderBy('nama_customer')->get();
 
-//     return view('penjualan.data-penjualan.index', [
+    //     return view('penjualan.data-penjualan.index', [
 //         'invoices'      => $invoices,
 //         'customers'     => $customers,
 //         'totalAllDpp'   => $totalAllDpp,
@@ -292,421 +293,428 @@ public function getPayments($id)
 //     ]);
 // }
 //modal data penjualan
-public function getPaymentsPiutang($id)
-{
-    $invoice = Invoice::with('paymentDetails.payment')->findOrFail($id);
+    public function getPaymentsPiutang($id)
+    {
+        $invoice = Invoice::with('paymentDetails.payment')->findOrFail($id);
 
-    $data = [];
+        $data = [];
 
-    foreach ($invoice->paymentDetails as $pd) {
+        foreach ($invoice->paymentDetails as $pd) {
 
-        $payment = $pd->payment;
+            $payment = $pd->payment;
 
-        // pastikan hanya payment type IN
-        if ($payment->type !== 'in') continue;
+            // pastikan hanya payment type IN
+            if ($payment->type !== 'in')
+                continue;
 
-        $ket = $payment->keterangan ?? '';
+            $ket = $payment->keterangan ?? '';
 
-        if (str_contains($ket, 'TF')) {
-            $metode = 'Transfer';
-        } elseif (str_contains($ket, 'Cash')) {
-            $metode = 'Cash';
-        } else {
-            $metode = '-';
+            if (str_contains($ket, 'TF')) {
+                $metode = 'Transfer';
+            } elseif (str_contains($ket, 'Cash')) {
+                $metode = 'Cash';
+            } else {
+                $metode = '-';
+            }
+
+            $data[] = [
+                'tgl' => $payment->created_at->format('d-m-Y'),
+                'nominal' => number_format($pd->subtotal, 0, ',', '.'),
+                'metode' => $metode
+            ];
         }
 
-        $data[] = [
-            'tgl' => $payment->created_at->format('d-m-Y'),
-            'nominal' => number_format($pd->subtotal,0,',','.'),
-            'metode' => $metode
+        return response()->json($data);
+    }
+
+    public function exportPenjualan(Request $request)
+    {
+        $query = Invoice::with('customer', 'paymentDetails.payment')
+            ->where('type', Invoice::TYPE_KELUAR);
+
+        if ($request->filled('from') && $request->filled('to')) {
+            $query->whereBetween('tgl', [$request->from, $request->to]);
+        }
+
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        $invoices = $query->get();
+
+        $filename = "laporan_penjualan.xls";
+
+        $headers = [
+            "Content-Type" => "application/vnd.ms-excel",
+            "Content-Disposition" => "attachment; filename=$filename",
         ];
+
+        return response()->view(
+            'penjualan.data-penjualan.excel',
+            compact('invoices'),
+            200,
+            $headers
+        );
+    }
+    public function printPenjualan(Request $request)
+    {
+        $query = Invoice::with('customer', 'paymentDetails.payment')
+            ->where('type', Invoice::TYPE_KELUAR);
+
+        if ($request->filled('from') && $request->filled('to')) {
+            $query->whereBetween('tgl', [$request->from, $request->to]);
+        }
+
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        $invoices = $query->latest()->get();
+
+        $totalDpp = $invoices->sum('dpp');
+        $totalPpn = $invoices->sum('ppn');
+        $grandTotal = $invoices->sum('grand_total');
+
+        return view('penjualan.data-penjualan.print', compact(
+            'invoices',
+            'totalDpp',
+            'totalPpn',
+            'grandTotal'
+        ));
     }
 
-    return response()->json($data);
-}
+    public function exportPembelian(Request $request)
+    {
+        $query = Invoice::with('supplier', 'paymentDetails.payment')
+            ->where('type', Invoice::TYPE_MASUK);
 
-public function exportPenjualan(Request $request)
-{
-    $query = Invoice::with('customer','paymentDetails.payment')
-        ->where('type', Invoice::TYPE_KELUAR);
+        if ($request->filled('from') && $request->filled('to')) {
+            $query->whereBetween('tgl', [$request->from, $request->to]);
+        }
 
-    if ($request->filled('from') && $request->filled('to')) {
-        $query->whereBetween('tgl', [$request->from, $request->to]);
+        if ($request->filled('supplier_id')) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        $invoices = $query->get();
+
+        $filename = "laporan_pembelian.xls";
+
+        $headers = [
+            "Content-Type" => "application/vnd.ms-excel",
+            "Content-Disposition" => "attachment; filename=$filename",
+        ];
+
+        return response()->view(
+            'pembelian.data-pembelian.excel',
+            compact('invoices'),
+            200,
+            $headers
+        );
     }
 
-    if ($request->filled('customer_id')) {
-        $query->where('customer_id', $request->customer_id);
+    public function printPembelian(Request $request)
+    {
+        $query = Invoice::with('supplier', 'paymentDetails.payment')
+            ->where('type', Invoice::TYPE_MASUK);
+
+        if ($request->filled('from') && $request->filled('to')) {
+            $query->whereBetween('tgl', [$request->from, $request->to]);
+        }
+
+        if ($request->filled('supplier_id')) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        $invoices = $query->latest()->get();
+
+        $totalDpp = $invoices->sum('dpp');
+        $totalPpn = $invoices->sum('ppn');
+        $grandTotal = $invoices->sum('grand_total');
+
+        return view('pembelian.data-pembelian.print', compact(
+            'invoices',
+            'totalDpp',
+            'totalPpn',
+            'grandTotal'
+        ));
     }
-
-    $invoices = $query->get();
-
-    $filename = "laporan_penjualan.xls";
-
-    $headers = [
-        "Content-Type" => "application/vnd.ms-excel",
-        "Content-Disposition" => "attachment; filename=$filename",
-    ];
-
-    return response()->view(
-        'penjualan.data-penjualan.excel',
-        compact('invoices'),
-        200,
-        $headers
-    );
-}
-public function printPenjualan(Request $request)
-{
-    $query = Invoice::with('customer','paymentDetails.payment')
-        ->where('type', Invoice::TYPE_KELUAR);
-
-    if ($request->filled('from') && $request->filled('to')) {
-        $query->whereBetween('tgl', [$request->from, $request->to]);
-    }
-
-    if ($request->filled('customer_id')) {
-        $query->where('customer_id', $request->customer_id);
-    }
-
-    $invoices = $query->latest()->get();
-
-    $totalDpp = $invoices->sum('dpp');
-    $totalPpn = $invoices->sum('ppn');
-    $grandTotal = $invoices->sum('grand_total');
-
-    return view('penjualan.data-penjualan.print', compact(
-        'invoices',
-        'totalDpp',
-        'totalPpn',
-        'grandTotal'
-    ));
-}
-
-public function exportPembelian(Request $request)
-{
-    $query = Invoice::with('supplier','paymentDetails.payment')
-        ->where('type', Invoice::TYPE_MASUK);
-
-    if ($request->filled('from') && $request->filled('to')) {
-        $query->whereBetween('tgl', [$request->from, $request->to]);
-    }
-
-    if ($request->filled('supplier_id')) {
-        $query->where('supplier_id', $request->supplier_id);
-    }
-
-    $invoices = $query->get();
-
-    $filename = "laporan_pembelian.xls";
-
-    $headers = [
-        "Content-Type" => "application/vnd.ms-excel",
-        "Content-Disposition" => "attachment; filename=$filename",
-    ];
-
-    return response()->view(
-        'pembelian.data-pembelian.excel',
-        compact('invoices'),
-        200,
-        $headers
-    );
-}
-
-public function printPembelian(Request $request)
-{
-    $query = Invoice::with('supplier','paymentDetails.payment')
-        ->where('type', Invoice::TYPE_MASUK);
-
-    if ($request->filled('from') && $request->filled('to')) {
-        $query->whereBetween('tgl', [$request->from, $request->to]);
-    }
-
-    if ($request->filled('supplier_id')) {
-        $query->where('supplier_id', $request->supplier_id);
-    }
-
-    $invoices = $query->latest()->get();
-
-    $totalDpp = $invoices->sum('dpp');
-    $totalPpn = $invoices->sum('ppn');
-    $grandTotal = $invoices->sum('grand_total');
-
-    return view('pembelian.data-pembelian.print', compact(
-        'invoices',
-        'totalDpp',
-        'totalPpn',
-        'grandTotal'
-    ));
-}
 
 
     // ===========================
     // LAPORAN HUTANG
     // ===========================
 
-public function laporanHutang(Request $request)
-{
-    $suppliers = Supplier::with([
-        'invoices' => function ($q) {
-            $q->where('type', Invoice::TYPE_MASUK);
-        },
-        'invoices.paymentDetails'
-    ])->get();
+    public function laporanHutang(Request $request)
+    {
+        $suppliers = Supplier::with([
+            'invoices' => function ($q) {
+                $q->where('type', Invoice::TYPE_MASUK);
+            },
+            'invoices.paymentDetails'
+        ])->get();
 
-    return view('pembelian.hutang.index', compact('suppliers'));
-}
-public function getHutangDetail($supplierId)
-{
-    $invoices = Invoice::with('paymentDetails')
-        ->where('supplier_id', $supplierId)
-        ->where('type', Invoice::TYPE_MASUK)
-        ->get();
-
-    $data = $invoices->map(function($inv){
-
-        $paid = $inv->paymentDetails->sum('subtotal');
-        $sisa = $inv->grand_total - $paid;
-
-        if($sisa <= 0) return null;
-
-        return [
-            'tgl' => $inv->tgl->format('d-m-Y'),
-            'no' => $inv->no,
-            'no_so' => $inv->no_so,
-            'jatuh_tempo' => $inv->jatuh_tempo->format('d-m-Y'),
-            'total' => number_format($inv->grand_total,0,',','.'),
-            'paid' => number_format($paid,0,',','.'),
-            'sisa' => number_format($sisa,0,',','.')
-        ];
-    })->filter()->values();
-
-    return response()->json($data);
-}
-
-public function bayarHutang(Request $request)
-{
-    $request->validate([
-        'supplier_id' => 'required|exists:suppliers,id',
-        'jumlah_bayar' => 'required|numeric|min:1',
-        'metode' => 'required'
-    ]);
-
-    DB::beginTransaction();
-
-    try {
-
-        $supplierId = $request->supplier_id;
-        $sisaUang = (int) $request->jumlah_bayar;
-
-        // Ambil invoice yg masih ada sisa, urut paling lama
+        return view('pembelian.hutang.index', compact('suppliers'));
+    }
+    public function getHutangDetail($supplierId)
+    {
         $invoices = Invoice::with('paymentDetails')
             ->where('supplier_id', $supplierId)
             ->where('type', Invoice::TYPE_MASUK)
-            ->orderBy('tgl', 'asc')
             ->get();
 
-        // Hitung total sisa hutang
-        $totalSisa = 0;
+        $data = $invoices->map(function ($inv) {
 
-        foreach ($invoices as $inv) {
             $paid = $inv->paymentDetails->sum('subtotal');
-            $kurang = $inv->grand_total - $paid;
+            $sisa = $inv->grand_total - $paid;
 
-            if ($kurang > 0) {
-                $totalSisa += $kurang;
-            }
-        }
+            if ($sisa <= 0)
+                return null;
 
-        if ($sisaUang > $totalSisa) {
-            throw new \Exception('Jumlah bayar melebihi total hutang.');
-        }
+            return [
+                'tgl' => $inv->tgl->format('d-m-Y'),
+                'no' => $inv->no,
+                'no_so' => $inv->no_so,
+                'jatuh_tempo' => $inv->jatuh_tempo->format('d-m-Y'),
+                'total' => number_format($inv->grand_total, 0, ',', '.'),
+                'paid' => number_format($paid, 0, ',', '.'),
+                'sisa' => number_format($sisa, 0, ',', '.')
+            ];
+        })->filter()->values();
 
-        // Buat header payment
-        $payment = Payment::create([
-            'total' => $request->jumlah_bayar,
-            'keterangan' => 'Pelunasan Hutang - ' . $request->metode,
-            'type' => 'out',
-            'supplier_id' => $supplierId,
-            'customer_id' => null,
+        return response()->json($data);
+    }
+
+    public function bayarHutang(Request $request)
+    {
+        $request->validate([
+            'supplier_id' => 'required|exists:suppliers,id',
+            'jumlah_bayar' => 'required|numeric|min:1',
+            'metode' => 'required'
         ]);
 
-        // ====== FIFO LOGIC ======
-        foreach ($invoices as $invoice) {
+        DB::beginTransaction();
 
-            if ($sisaUang <= 0) break;
+        try {
 
-            $sudahDibayar = $invoice->paymentDetails->sum('subtotal');
-            $kurang = $invoice->grand_total - $sudahDibayar;
+            $supplierId = $request->supplier_id;
+            $sisaUang = (int) $request->jumlah_bayar;
 
-            if ($kurang <= 0) continue;
+            // Ambil invoice yg masih ada sisa, urut paling lama
+            $invoices = Invoice::with('paymentDetails')
+                ->where('supplier_id', $supplierId)
+                ->where('type', Invoice::TYPE_MASUK)
+                ->orderBy('tgl', 'asc')
+                ->get();
 
-            // bayar sebagian atau penuh
-            $bayar = min($sisaUang, $kurang);
+            // Hitung total sisa hutang
+            $totalSisa = 0;
 
-            PaymentDetail::create([
-                'payment_id' => $payment->id,
-                'invoice_id' => $invoice->id,
-                'subtotal' => $bayar
-            ]);
+            foreach ($invoices as $inv) {
+                $paid = $inv->paymentDetails->sum('subtotal');
+                $kurang = $inv->grand_total - $paid;
 
-            // update kolom paid
-            $invoice->paid += $bayar;
-
-            if ($invoice->paid >= $invoice->grand_total) {
-                $invoice->status = 'paid';
-            } else {
-                $invoice->status = 'partial';
+                if ($kurang > 0) {
+                    $totalSisa += $kurang;
+                }
             }
 
-            $invoice->save();
+            if ($sisaUang > $totalSisa) {
+                throw new \Exception('Jumlah bayar melebihi total hutang.');
+            }
 
-            $sisaUang -= $bayar;
+            // Buat header payment
+            $payment = Payment::create([
+                'total' => $request->jumlah_bayar,
+                'keterangan' => 'Pelunasan Hutang - ' . $request->metode,
+                'type' => 'out',
+                'supplier_id' => $supplierId,
+                'customer_id' => null,
+            ]);
+
+            // ====== FIFO LOGIC ======
+            foreach ($invoices as $invoice) {
+
+                if ($sisaUang <= 0)
+                    break;
+
+                $sudahDibayar = $invoice->paymentDetails->sum('subtotal');
+                $kurang = $invoice->grand_total - $sudahDibayar;
+
+                if ($kurang <= 0)
+                    continue;
+
+                // bayar sebagian atau penuh
+                $bayar = min($sisaUang, $kurang);
+
+                PaymentDetail::create([
+                    'payment_id' => $payment->id,
+                    'invoice_id' => $invoice->id,
+                    'subtotal' => $bayar
+                ]);
+
+                // update kolom paid
+                $invoice->paid += $bayar;
+
+                if ($invoice->paid >= $invoice->grand_total) {
+                    $invoice->status = 'paid';
+                } else {
+                    $invoice->status = 'partial';
+                }
+
+                $invoice->save();
+
+                $sisaUang -= $bayar;
+            }
+
+            DB::commit();
+
+            return back()->with('success', 'Pembayaran berhasil disimpan.');
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return back()->withErrors($e->getMessage());
         }
-
-        DB::commit();
-
-        return back()->with('success', 'Pembayaran berhasil disimpan.');
-
-    } catch (\Exception $e) {
-
-        DB::rollBack();
-
-        return back()->withErrors($e->getMessage());
     }
-}
 
     // ===========================
     // LAPORAN PIUTANG
     // ===========================
 
     public function laporanPiutang()
-{
-    $customers = Customer::with([
-        'invoices' => function ($q) {
-            $q->where('type', 'out'); // invoice penjualan
-        },
-        'invoices.paymentDetails'
-    ])->get();
+    {
+        $customers = Customer::with([
+            'invoices' => function ($q) {
+                $q->where('type', 'out'); // invoice penjualan
+            },
+            'invoices.paymentDetails'
+        ])->get();
 
-    return view('penjualan.piutang.index', compact('customers'));
-}
+        return view('penjualan.piutang.index', compact('customers'));
+    }
 
-public function getPiutangDetail($customerId)
-{
-    $invoices = Invoice::with('paymentDetails')
-        ->where('customer_id', $customerId)
-        ->where('type', 'out') // invoice penjualan
-        ->orderBy('tgl', 'asc')
-        ->get();
-
-    $data = $invoices->map(function($inv){
-
-        $paid = $inv->paymentDetails->sum('subtotal');
-        $sisa = $inv->grand_total - $paid;
-
-        if($sisa <= 0) return null;
-
-        return [
-            'tgl' => $inv->tgl->format('d-m-Y'),
-            'no' => $inv->no,
-            'no_so' => $inv->no_so,
-            'jatuh_tempo' => optional($inv->jatuh_tempo)->format('d-m-Y'),
-            'total' => number_format($inv->grand_total,0,',','.'),
-            'paid' => number_format($paid,0,',','.'),
-            'sisa' => number_format($sisa,0,',','.')
-        ];
-    })->filter()->values();
-
-    return response()->json($data);
-}
-
-public function bayarPiutang(Request $request)
-{
-    $request->validate([
-        'customer_id' => 'required|exists:customers,id',
-        'jumlah_bayar' => 'required|numeric|min:1',
-        'metode' => 'required'
-    ]);
-
-    DB::beginTransaction();
-
-    try {
-
-        $customerId = $request->customer_id;
-        $sisaUang = (int) $request->jumlah_bayar;
-
-        // Ambil invoice piutang (type out)
+    public function getPiutangDetail($customerId)
+    {
         $invoices = Invoice::with('paymentDetails')
             ->where('customer_id', $customerId)
             ->where('type', 'out') // invoice penjualan
             ->orderBy('tgl', 'asc')
             ->get();
 
-        // Hitung total sisa piutang
-        $totalSisa = 0;
+        $data = $invoices->map(function ($inv) {
 
-        foreach ($invoices as $inv) {
             $paid = $inv->paymentDetails->sum('subtotal');
-            $kurang = $inv->grand_total - $paid;
+            $sisa = $inv->grand_total - $paid;
 
-            if ($kurang > 0) {
-                $totalSisa += $kurang;
-            }
-        }
+            if ($sisa <= 0)
+                return null;
 
-        if ($sisaUang > $totalSisa) {
-            throw new \Exception('Jumlah bayar melebihi total piutang.');
-        }
+            return [
+                'tgl' => $inv->tgl->format('d-m-Y'),
+                'no' => $inv->no,
+                'no_so' => $inv->no_so,
+                'jatuh_tempo' => optional($inv->jatuh_tempo)->format('d-m-Y'),
+                'total' => number_format($inv->grand_total, 0, ',', '.'),
+                'paid' => number_format($paid, 0, ',', '.'),
+                'sisa' => number_format($sisa, 0, ',', '.')
+            ];
+        })->filter()->values();
 
-        // Buat payment (uang masuk)
-        $payment = Payment::create([
-            'total' => $request->jumlah_bayar,
-            'keterangan' => 'Pelunasan Piutang - ' . $request->metode,
-            'type' => 'in', 
-            'customer_id' => $customerId,
-            'supplier_id' => null,
+        return response()->json($data);
+    }
+
+    public function bayarPiutang(Request $request)
+    {
+        $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'jumlah_bayar' => 'required|numeric|min:1',
+            'metode' => 'required'
         ]);
 
-        foreach ($invoices as $invoice) {
+        DB::beginTransaction();
 
-            if ($sisaUang <= 0) break;
+        try {
 
-            $sudahDibayar = $invoice->paymentDetails->sum('subtotal');
-            $kurang = $invoice->grand_total - $sudahDibayar;
+            $customerId = $request->customer_id;
+            $sisaUang = (int) $request->jumlah_bayar;
 
-            if ($kurang <= 0) continue;
+            // Ambil invoice piutang (type out)
+            $invoices = Invoice::with('paymentDetails')
+                ->where('customer_id', $customerId)
+                ->where('type', 'out') // invoice penjualan
+                ->orderBy('tgl', 'asc')
+                ->get();
 
-            $bayar = min($sisaUang, $kurang);
+            // Hitung total sisa piutang
+            $totalSisa = 0;
 
-            PaymentDetail::create([
-                'payment_id' => $payment->id,
-                'invoice_id' => $invoice->id,
-                'subtotal' => $bayar
-            ]);
+            foreach ($invoices as $inv) {
+                $paid = $inv->paymentDetails->sum('subtotal');
+                $kurang = $inv->grand_total - $paid;
 
-            $invoice->paid += $bayar;
-
-            if ($invoice->paid >= $invoice->grand_total) {
-                $invoice->status = 'paid';
-            } else {
-                $invoice->status = 'partial';
+                if ($kurang > 0) {
+                    $totalSisa += $kurang;
+                }
             }
 
-            $invoice->save();
+            if ($sisaUang > $totalSisa) {
+                throw new \Exception('Jumlah bayar melebihi total piutang.');
+            }
 
-            $sisaUang -= $bayar;
+            // Buat payment (uang masuk)
+            $payment = Payment::create([
+                'total' => $request->jumlah_bayar,
+                'keterangan' => 'Pelunasan Piutang - ' . $request->metode,
+                'type' => 'in',
+                'customer_id' => $customerId,
+                'supplier_id' => null,
+            ]);
+
+            foreach ($invoices as $invoice) {
+
+                if ($sisaUang <= 0)
+                    break;
+
+                $sudahDibayar = $invoice->paymentDetails->sum('subtotal');
+                $kurang = $invoice->grand_total - $sudahDibayar;
+
+                if ($kurang <= 0)
+                    continue;
+
+                $bayar = min($sisaUang, $kurang);
+
+                PaymentDetail::create([
+                    'payment_id' => $payment->id,
+                    'invoice_id' => $invoice->id,
+                    'subtotal' => $bayar
+                ]);
+
+                $invoice->paid += $bayar;
+
+                if ($invoice->paid >= $invoice->grand_total) {
+                    $invoice->status = 'paid';
+                } else {
+                    $invoice->status = 'partial';
+                }
+
+                $invoice->save();
+
+                $sisaUang -= $bayar;
+            }
+
+            DB::commit();
+
+            return back()->with('success', 'Pembayaran piutang berhasil disimpan.');
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return back()->withErrors($e->getMessage());
         }
-
-        DB::commit();
-
-        return back()->with('success', 'Pembayaran piutang berhasil disimpan.');
-
-    } catch (\Exception $e) {
-
-        DB::rollBack();
-
-        return back()->withErrors($e->getMessage());
     }
-}
 
 
     // ===========================
@@ -737,7 +745,7 @@ public function bayarPiutang(Request $request)
 
     public function storeMasuk(Request $request)
     {
-        
+
         $request->validate([
             'no' => 'required|unique:invoices,no',
             'tgl' => 'required|date',
@@ -1016,7 +1024,19 @@ public function bayarPiutang(Request $request)
         return view('pembelian.invoice.detail', compact('invoice'));
     }
 
+    public function print($id)
+    {
+        $invoice = Invoice::with([
+            'deliveryNote.order.customer',
+            'deliveryNote.details.orderDetail.barang'
+        ])->findOrFail($id);
 
+        $pdf = Pdf::loadView('penjualan.invoice.print', compact('invoice'));
+
+        $filename = 'invoice-' . str_replace(['/', '\\'], '-', $invoice->no) . '.pdf';
+
+        return $pdf->stream($filename);
+    }
 
 
     public function getDeliveryNoteDetail($id)

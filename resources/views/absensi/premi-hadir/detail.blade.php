@@ -1,8 +1,14 @@
+<a href="{{ route('premiHadir.print', $absensi->id) }}" target="_blank" class="btn btn-primary">
+    Print premi
+</a>
+<a href="{{ route('sewa.print', $absensi->id) }}" target="_blank" class="btn btn-primary">
+    Print Sewa
+</a>
 <h5>
     Periode: {{ $absensi->tanggal_mulai }}
     s/d
     {{ $absensi->tanggal_akhir }}
-</h5>
+</h5>   
 
 <table class="table table-bordered table-sm mt-3">
     <thead class="thead-light">

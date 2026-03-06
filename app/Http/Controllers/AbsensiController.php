@@ -11,6 +11,8 @@ use App\Models\PremiHadir;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class AbsensiController extends Controller
 {
@@ -162,5 +164,45 @@ class AbsensiController extends Controller
             'users',
             'absenDetails'
         ))->render();
+    }
+
+    public function printPremi($id)
+    {
+        $absensi = Absensi::with([
+            'premiHadirs' => function ($q) {
+                $q->where('nominal_sewa_harian', '>', 0)
+                    ->with(['user.sewaKendaraan']);
+            }
+        ])->findOrFail($id);
+
+        $pdf = Pdf::loadView('absensi.premi-hadir.printPremi', compact('absensi'));
+
+        $filename = 'premi-' .
+            str_replace(['/', '\\'], '-', $absensi->tanggal_mulai) .
+            '-sd-' .
+            str_replace(['/', '\\'], '-', $absensi->tanggal_akhir) .
+            '.pdf';
+
+        return $pdf->stream($filename);
+    }
+
+    public function printSewa($id)
+    {
+        $absensi = Absensi::with([
+            'premiHadirs' => function ($q) {
+                $q->where('nominal_sewa_harian', '>', 0)
+                    ->with(['user.sewaKendaraan']);
+            }
+        ])->findOrFail($id);
+
+        $pdf = Pdf::loadView('absensi.premi-hadir.printSewa', compact('absensi'));
+
+        $filename = 'sewa-' .
+            str_replace(['/', '\\'], '-', $absensi->tanggal_mulai) .
+            '-sd-' .
+            str_replace(['/', '\\'], '-', $absensi->tanggal_akhir) .
+            '.pdf';
+
+        return $pdf->stream($filename);
     }
 }

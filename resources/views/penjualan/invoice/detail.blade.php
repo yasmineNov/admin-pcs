@@ -1,3 +1,7 @@
+<a href="{{ route('invSales.print', $invoice->id) }}" target="_blank" class="btn btn-primary">
+    Print Invoice
+</a>
+
 <h5>Informasi Invoice</h5>
 <table class="table table-bordered">
     <tr>
@@ -12,9 +16,14 @@
         <th>Status</th>
         <td>{{ $invoice->status }}</td>
     </tr>
+    <tr>
+        <th>No Surat Jalan</th>
+        <td>{{ $invoice->deliveryNote->no }}</td>
+    </tr>
 </table>
 
 <hr>
+
 
 <h5>Informasi Order</h5>
 <table class="table table-bordered">
@@ -53,12 +62,12 @@
                 $lineTotal = $qty * $harga;
                 $subtotal += $lineTotal;
             @endphp
-        <tr>
-            <td>{{ $detail->orderDetail->barang->nama_barang ?? '-' }}</td>
-            <td class="text-end">{{ number_format($qty, 2) }}</td>
-            <td class="text-end">{{ number_format($harga, 2) }}</td>
-            <td class="text-end">{{ number_format($lineTotal, 2) }}</td>
-        </tr>
+            <tr>
+                <td>{{ $detail->orderDetail->barang->nama_barang ?? '-' }}</td>
+                <td class="text-end">{{ number_format($qty, 2) }}</td>
+                <td class="text-end">{{ number_format($harga, 2) }}</td>
+                <td class="text-end">{{ number_format($lineTotal, 2) }}</td>
+            </tr>
         @endforeach
     </tbody>
 </table>

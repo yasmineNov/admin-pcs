@@ -1,3 +1,7 @@
+<a href="{{ route('dnso.print', $dn->id) }}" target="_blank" class="btn btn-primary">
+    Print Surat Jalan
+</a>
+
 <div class="mb-3">
     <table class="table table-bordered">
         <tr>
@@ -13,8 +17,8 @@
             <td>{{ $dn->order?->no ?? '-' }}</td>
         </tr>
         <tr>
-            <th>Supplier</th>
-            <td>{{ $dn->order?->supplier?->nama_supplier ?? '-' }}</td>
+            <th>Customer</th>
+            <td>{{ $dn->order?->customer?->nama_customer ?? '-' }}</td>
         </tr>
     </table>
 </div>

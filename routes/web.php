@@ -160,7 +160,8 @@ Route::prefix('penjualan/delivery-note')
         Route::get('/{deliveryNote}', [DeliveryNoteController::class, 'show'])->name('show');
     });
 Route::get('/dnso/{id}', [DeliveryNoteController::class, 'showDetailSO']);
-
+Route::get('/dnso/{id}/print', [DeliveryNoteController::class, 'print'])
+    ->name('dnso.print');
 
 /*
 |--------------------------------------------------------------------------
@@ -192,6 +193,8 @@ Route::prefix('penjualan/invoice')
     });
 
 Route::get('/invSales/{id}/detail', [InvoiceController::class, 'detailSales']);
+Route::get('/invSales/{id}/print', [InvoiceController::class, 'print'])
+    ->name('invSales.print');
 
 
 Route::get('/penjualan/data/export', [InvoiceController::class, 'exportPenjualan'])->name('penjualan.data.export');
@@ -258,6 +261,8 @@ Route::prefix('absensi')->name('absensi.')->group(function () {
     // Route untuk Premi Hadir
     Route::get('premi-hadir', [AbsensiController::class, 'premiIndex'])->name('premi-hadir.index');
 
+
+
     // Route Resource lainnya
     Route::resource('premi-karyawan', PremiUserController::class);
     Route::resource('sewa-kendaraan', SewaKendaraanController::class);
@@ -267,6 +272,12 @@ Route::prefix('absensi')->name('absensi.')->group(function () {
         [AbsensiController::class, 'detailPremi']
     );
 });
+
+Route::get('/premiHadir/{id}/print', [AbsensiController::class, 'printPremi'])
+    ->name('premiHadir.print');
+Route::get('/sewa/{id}/print', [AbsensiController::class, 'printSewa'])
+    ->name('sewa.print');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -321,7 +332,7 @@ Route::prefix('barang/{barang}')->group(function () {
     Route::post('/harga', [BarangHargaController::class, 'store'])->name('barang.harga.store');
     Route::delete('/harga/{id}', [BarangHargaController::class, 'destroy'])->name('barang.harga.destroy');
 });
-    Route::get('/get-harga-barang', [App\Http\Controllers\BarangHargaController::class, 'getHargaAjax'])->name('barang.get-harga');
+Route::get('/get-harga-barang', [App\Http\Controllers\BarangHargaController::class, 'getHargaAjax'])->name('barang.get-harga');
 
 
 
