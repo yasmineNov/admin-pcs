@@ -78,12 +78,12 @@
 
 
         {{-- ================= SUMMARY KESELURUHAN ================= --}}
-        <div class="alert alert-info">
+        {{-- <div class="alert alert-info">
             <strong>Total Sesuai Filter:</strong><br>
             DPP: {{ number_format($totalDpp,0,',','.') }} |
             PPN: {{ number_format($totalPpn,0,',','.') }} |
             Grand Total: {{ number_format($grandTotal,0,',','.') }}
-        </div>
+        </div> --}}
 
 
         {{-- ================= TABLE ================= --}}

@@ -20,7 +20,6 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\KasController;
 
-
 /*
 |--------------------------------------------------------------------------
 | BASIC

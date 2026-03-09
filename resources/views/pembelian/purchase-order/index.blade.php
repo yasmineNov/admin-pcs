@@ -2,11 +2,13 @@
 
 @section('content')
     <div class="card">
-        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <div class="card-header bg-dark text-white align-items-center">
+            <div class="d-flex justify-content-between">
             <h4>Purchase Orders</h4>
             <a href="{{ route('pembelian.purchase-order.create') }}" class="btn btn-success btn-sm">
                 + Buat PO
             </a>
+        </div>
         </div>
 
         <div class="card-body">

@@ -13,9 +13,7 @@
                 <div class="row mb-2">
                     <div class="col-md-2">
                         <label>No. Invoice</label>
-                        <input type="text" name="no" class="form-control"
-                            value="{{ generateDocumentNumber('invoices', 'INV') }}" readonly
-                            style="background-color: #e9ecef;">
+                        <input type="text" name="no" class="form-control" required>
                     </div>
 
                     <div class="col-md-2">
@@ -63,7 +61,18 @@
                 </table>
 
                 <hr>
-                <div class="row">
+
+<div class="row mb-3">
+    <div class="col-md-3">
+        <label>Pajak</label>
+        <select name="ppn_mode" id="ppn_mode" class="form-control">
+            <option value="ppn" selected>PPN 11%</option>
+            <option value="non">Non PPN</option>
+        </select>
+    </div>
+</div>
+
+<div class="row">
                     <div class="col-md-3">
                         <label>Subtotal (DPP)</label>
                         <input type="number" name="dpp" id="dpp" class="form-control" readonly
@@ -113,16 +122,31 @@
             }
 
             function calculateTotal() {
-                let dpp = 0;
-                document.querySelectorAll('.subtotal-detail').forEach(input => {
-                    dpp += parseFloat(input.value) || 0;
-                });
-                let pajak = dpp * 0.11;
-                let total = dpp + pajak;
-                document.getElementById('dpp').value = dpp.toFixed(2);
-                document.getElementById('pajak').value = pajak.toFixed(2);
-                document.getElementById('total').value = total.toFixed(2);
-            }
+
+    let dpp = 0;
+
+    document.querySelectorAll('.subtotal-detail').forEach(input => {
+        dpp += parseFloat(input.value) || 0;
+    });
+
+    let mode = document.getElementById('ppn_mode').value;
+
+    let pajak = 0;
+
+    if (mode === 'ppn') {
+        pajak = dpp * 0.11;
+    }
+
+    let total = dpp + pajak;
+
+    document.getElementById('dpp').value = dpp.toFixed(2);
+    document.getElementById('pajak').value = pajak.toFixed(2);
+    document.getElementById('total').value = total.toFixed(2);
+}
+// 🔵 EVENT DROPDOWN PPN
+    document.getElementById('ppn_mode').addEventListener('change', function () {
+        calculateTotal();
+    });
 
             // Ambil data delivery note via AJAX
             deliverySelect.addEventListener('change', function () {

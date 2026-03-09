@@ -5,7 +5,7 @@
     <div class="card-header bg-dark text-white">
         <h4>Buat Purchase Order</h4>
     </div>
-
+ 
     <form action="{{ route('pembelian.purchase-order.store') }}" method="POST" id="poForm">
         @csrf
         <div class="card-body">
@@ -46,11 +46,11 @@
             <table class="table table-bordered" id="items-table">
                 <thead class="bg-secondary text-white">
                     <tr>
-                        <th>Barang</th>
-                        <th>Qty</th>
-                        <th>Harga</th>
-                        <th>Subtotal</th>
-                        <th>Aksi</th>
+    <th style="width:50%">Barang</th>
+    <th style="width:10%">Qty</th>
+    <th style="width:20%">Harga</th>
+    <th style="width:15%">Subtotal</th>
+    <th style="width:5%">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -73,6 +73,15 @@
             <button type="button" class="btn btn-primary btn-sm" id="add-row">+ Tambah Barang</button>
 
             <hr>
+            <div class="row mb-3">
+    <div class="col-md-3">
+        <label>Gunakan PPN</label>
+        <select name="use_ppn" id="use_ppn" class="form-control">
+            <option value="1" selected>Pakai PPN</option>
+            <option value="0">Tidak Pakai PPN</option>
+        </select>
+    </div>
+</div>
             <div class="row">
                 <div class="col-md-3">
                     <label>Subtotal (DPP)</label>
@@ -102,7 +111,7 @@
 </div>
 @endsection
 
-@section('scripts')
+{{-- @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function(){
 
@@ -181,4 +190,139 @@ document.getElementById('items-table').addEventListener('click', function(e){
 });
 
 </script>
+@endsection --}}
+<style>
+
+.select2-container--default .select2-selection--single {
+    height: 38px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: normal !important;
+    padding-left: 8px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 38px !important;
+}
+
+</style>
+@section('scripts')
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+
+$(document).ready(function(){
+
+    function initSelect2(){
+        $('.barang-select').select2({
+            placeholder: "cari barang",
+            width: '80%',
+        });
+    }
+
+    initSelect2();
+
+    function calculateRow(row){
+
+        let qtyInput = row.querySelector('.qty');
+        let hargaInput = row.querySelector('.harga');
+        let subtotalInput = row.querySelector('.subtotal-detail');
+
+        let qty = parseFloat(qtyInput.value);
+        let harga = parseFloat(hargaInput.value);
+
+        if(isNaN(qty)) qty = 0;
+        if(isNaN(harga)) harga = 0;
+
+        let subtotal = qty * harga;
+
+        subtotalInput.value = subtotal.toFixed(2);
+
+        calculateTotal();
+    }
+
+    function calculateTotal(){
+
+        let dpp = 0;
+
+        document.querySelectorAll('.subtotal-detail').forEach(function(input){
+
+            let value = parseFloat(input.value);
+
+            if(!isNaN(value)){
+                dpp += value;
+            }
+
+        });
+
+        let usePpn = document.getElementById('use_ppn').value;
+
+        let pajak = 0;
+
+        if(usePpn == 1){
+            pajak = dpp * 0.11;
+        }
+
+        let total = dpp + pajak;
+
+        document.getElementById('dpp').value = dpp.toFixed(2);
+        document.getElementById('pajak').value = pajak.toFixed(2);
+        document.getElementById('total').value = total.toFixed(2);
+    }
+
+
+    // 🔵 EVENT PPN DIPINDAH KE SINI
+    $('#use_ppn').on('change', function(){
+        calculateTotal();
+    });
+
+
+    $('#add-row').click(function(){
+
+        let tbody = $('#items-table tbody');
+        let firstRow = tbody.find('tr:first');
+        let newRow = firstRow.clone();
+
+        newRow.find('input').val('');
+        newRow.find('select').val('');
+
+        tbody.append(newRow);
+
+        initSelect2();
+
+    });
+
+
+    $('#items-table').on('click','.remove-row',function(){
+
+        let tbody = $('#items-table tbody');
+
+        if(tbody.find('tr').length > 1){
+
+            $(this).closest('tr').remove();
+
+            calculateTotal();
+        }
+
+    });
+
+
+    $('#items-table').on('input','.qty, .harga',function(){
+
+        let row = $(this).closest('tr')[0];
+
+        calculateRow(row);
+
+    });
+
+});
+
+</script>
+
 @endsection
+
