@@ -1,5 +1,8 @@
 <a href="{{ route('dnso.print', $dn->id) }}" target="_blank" class="btn btn-primary">
-    Print Surat Jalan
+    Print PDF
+</a>
+<a href="{{ route('dnso.printDot', $dn->id) }}" target="_blank" class="btn btn-secondary">
+    Print Dot Matrix
 </a>
 
 <div class="mb-3">

@@ -1037,6 +1037,19 @@ class InvoiceController extends Controller
 
         return $pdf->stream($filename);
     }
+    public function printDot($id)
+    {
+        $invoice = Invoice::with([
+            'deliveryNote.order.customer',
+            'deliveryNote.details.orderDetail.barang'
+        ])->findOrFail($id);
+
+        $pdf = Pdf::loadView('penjualan.invoice.printDot', compact('invoice'));
+
+        $filename = 'invoice-' . str_replace(['/', '\\'], '-', $invoice->no) . '.pdf';
+
+        return $pdf->stream($filename);
+    }
 
 
     public function getDeliveryNoteDetail($id)

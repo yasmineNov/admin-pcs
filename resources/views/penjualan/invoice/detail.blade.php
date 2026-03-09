@@ -1,5 +1,9 @@
 <a href="{{ route('invSales.print', $invoice->id) }}" target="_blank" class="btn btn-primary">
-    Print Invoice
+    Print PDF
+</a>
+
+<a href="{{ route('invSales.printDot', $invoice->id) }}" target="_blank" class="btn btn-secondary">
+    Print Dot Matrix
 </a>
 
 <h5>Informasi Invoice</h5>

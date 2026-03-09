@@ -382,6 +382,19 @@ class DeliveryNoteController extends Controller
 
         return $pdf->stream($filename);
     }
+    public function printDot($id)
+    {
+        $dn = DeliveryNote::with([
+            'order.customer',
+            'details.orderDetail.barang'
+        ])->findOrFail($id);
+
+        $pdf = Pdf::loadView('penjualan.delivery_note.printDot', compact('dn'));
+
+        $filename = 'SuratJalan-' . str_replace(['/', '\\'], '-', $dn->no) . '.pdf';
+
+        return $pdf->stream($filename);
+    }
 
     //ADDITIONAL
     public function getOrderDetails($id)

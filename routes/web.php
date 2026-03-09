@@ -162,6 +162,8 @@ Route::prefix('penjualan/delivery-note')
 Route::get('/dnso/{id}', [DeliveryNoteController::class, 'showDetailSO']);
 Route::get('/dnso/{id}/print', [DeliveryNoteController::class, 'print'])
     ->name('dnso.print');
+Route::get('/dnso/{id}/printDot', [DeliveryNoteController::class, 'printDot'])
+    ->name('dnso.printDot');
 
 /*
 |--------------------------------------------------------------------------
@@ -195,7 +197,8 @@ Route::prefix('penjualan/invoice')
 Route::get('/invSales/{id}/detail', [InvoiceController::class, 'detailSales']);
 Route::get('/invSales/{id}/print', [InvoiceController::class, 'print'])
     ->name('invSales.print');
-
+Route::get('/invSales/{id}/printDot', [InvoiceController::class, 'printDot'])
+    ->name('invSales.printDot');
 
 Route::get('/penjualan/data/export', [InvoiceController::class, 'exportPenjualan'])->name('penjualan.data.export');
 Route::get('/penjualan/data/print', [InvoiceController::class, 'printPenjualan'])->name('penjualan.data.print');
