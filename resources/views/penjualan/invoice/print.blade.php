@@ -59,14 +59,35 @@
         <tr>
 
             <td width="50%">
-                No SJ : {{ $invoice->deliveryNote->no }}<br>
-                No Faktur : {{ $invoice->no }}
+
+                <table class="no-border">
+                    <tr>
+                        <td width="110">No SJ</td>
+                        <td>: {{ $invoice->deliveryNote->no }}</td>
+                    </tr>
+
+                    <tr>
+                        <td>No Faktur</td>
+                        <td>: {{ $invoice->no }}</td>
+                    </tr>
+                </table>
+
             </td>
 
             <td width="50%">
-                No PO : {{ $invoice->deliveryNote->order->no }}<br>
-                Tanggal Invoice :
-                {{ $invoice->tgl->translatedFormat('d F Y') }}
+
+                <table class="no-border">
+                    <tr>
+                        <td width="110">No PO</td>
+                        <td>: {{ $invoice->deliveryNote->order->no }}</td>
+                    </tr>
+
+                    <tr>
+                        <td>Tanggal Invoice</td>
+                        <td>: {{ $invoice->tgl->translatedFormat('d F Y') }}</td>
+                    </tr>
+                </table>
+
             </td>
 
         </tr>
@@ -123,27 +144,27 @@
 
     <table class="no-border">
         <tr>
-            <td width="70%"></td>
-            <td width="30%">
+            <td width="60%"></td>
+            <td width="40%">
 
                 <table>
                     <tr>
                         <td>Dasar Pengenaan Pajak</td>
-                        <td class="text-right">
+                        <td>
                             Rp {{ number_format($subtotal, 0, ',', '.') }}
                         </td>
                     </tr>
 
                     <tr>
                         <td>PPN 11%</td>
-                        <td class="text-right">
+                        <td>
                             Rp {{ number_format($ppn, 0, ',', '.') }}
                         </td>
                     </tr>
 
                     <tr>
                         <td><b>Grand Total</b></td>
-                        <td class="text-right">
+                        <td>
                             <b>Rp {{ number_format($grandTotal, 0, ',', '.') }}</b>
                         </td>
                     </tr>

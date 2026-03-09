@@ -53,20 +53,53 @@
     <h3 style="text-align:center;">Surat Jalan</h3>
 
     <table class="no-border">
+
         <tr>
 
-            <td width="50%" style="vertical-align: top;">
-                No SJ : {{ $dn->no }}<br>
-                Tanggal: {{ $dn->tgl->translatedFormat('d F Y') }}<br>
-                Customer: {{ $dn->order->customer->nama_customer }}<br>
-                Alamat: {{ $dn->order->customer->alamat }}
+            <td width="50%" style="vertical-align:top">
+
+                <table class="no-border">
+                    <tr>
+                        <td width="110">No SJ</td>
+                        <td width="10">:</td>
+                        <td>{{ $dn->no }}</td>
+                    </tr>
+
+                    <tr>
+                        <td>Tanggal</td>
+                        <td>:</td>
+                        <td>{{ $dn->tgl->translatedFormat('d F Y') }}</td>
+                    </tr>
+
+                    <tr>
+                        <td>Customer</td>
+                        <td>:</td>
+                        <td>{{ $dn->order->customer->nama_customer }}</td>
+                    </tr>
+
+                    <tr>
+                        <td>Alamat</td>
+                        <td>:</td>
+                        <td>{{ $dn->order->customer->alamat }}</td>
+                    </tr>
+                </table>
+
             </td>
 
-            <td width="50%" style="vertical-align: top;">
-                Alamat Kirim : {{ $dn->alamat_kirim }}<br>
+            <td width="50%" style="vertical-align:top">
+
+                <table class="no-border">
+                    <tr>
+                        <td width="110">Alamat Kirim</td>
+                        <td width="10">:</td>
+                        <td>{{ $dn->alamat_kirim }}</td>
+                    </tr>
+                </table>
+
             </td>
 
         </tr>
+
     </table>
 
     <br>
