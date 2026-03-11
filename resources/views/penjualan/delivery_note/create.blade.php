@@ -10,7 +10,7 @@
                 <div class="col-md-3">
                     <label>No. Invoice</label>
                     <input type="text" name="no" class="form-control"
-                        value="{{ generateDocumentNumber('delivery_notes', 'PCS-SJ') }}" 
+                        value="{{ generateDocumentNumber('delivery_notes', 'PCS-SJ', 'keluar') }}" 
                         style="background-color: #e9ecef;">
                 </div>
 

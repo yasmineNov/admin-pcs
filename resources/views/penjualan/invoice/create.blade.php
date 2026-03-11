@@ -22,10 +22,10 @@
 
             <div class="card-body">
                 <div class="row mb-2">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label>No. Invoice</label>
                         <input type="text" name="no" class="form-control"
-                            value="{{ generateDocumentNumber('invoices', 'PCS-INV') }}" readonly
+                            value="{{ generateDocumentNumber('invoices', 'PCS-INV', 'out') }}" readonly
                             style="background-color: #e9ecef;">
                     </div>
 
@@ -74,6 +74,15 @@
                 </table>
 
                 <hr>
+                <div class="col-md-3">
+    <label>Pajak</label>
+    <select name="ppn_mode" id="ppn_mode" class="form-control">
+        <option value="ppn">PPN 11%</option>
+        <option value="non">Non PPN</option>
+    </select>
+</div>
+
+                <hr>
                 <div class="row">
                     <div class="col-md-3">
                         <label>Subtotal (DPP)</label>
@@ -96,6 +105,7 @@
                             style="background-color:#e9ecef;">
                     </div>
                 </div>
+
                 <hr>
                 <h5>Ongkir</h5>
 
@@ -135,97 +145,166 @@
 @endsection
 
 @section('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const deliverySelect = document.getElementById('delivery_note_id');
-            const itemsTable = document.querySelector('#items-table tbody');
-            const customerInput = document.getElementById('customer_name');
-            let rowIndex = 0;
+<script>
+document.addEventListener('DOMContentLoaded', function () {
 
-            function calculateRow(row) {
-                let qty = parseFloat(row.querySelector('.qty').value) || 0;
-                let harga = parseFloat(row.querySelector('.harga').value) || 0;
-                row.querySelector('.subtotal-detail').value = (qty * harga).toFixed(2);
-                calculateTotal();
-            }
+    const deliverySelect = document.getElementById('delivery_note_id');
+    const itemsTable = document.querySelector('#items-table tbody');
+    const customerInput = document.getElementById('customer_name');
+    const ppnMode = document.getElementById('ppn_mode');
 
-            function calculateTotal() {
-                let dpp = 0;
-                document.querySelectorAll('.subtotal-detail').forEach(input => {
-                    dpp += parseFloat(input.value) || 0;
-                });
-                let pajak = dpp * 0.11;
-                let total = dpp + pajak;
-                document.getElementById('dpp').value = dpp.toFixed(2);
-                document.getElementById('pajak').value = pajak.toFixed(2);
-                document.getElementById('total').value = total.toFixed(2);
-            }
+    const ongkirCheckbox = document.getElementById('pakai_ongkir');
+    const ongkirFields = document.getElementById('ongkir-fields');
 
-            deliverySelect.addEventListener('change', function () {
-                const dnId = this.value;
-                if (!dnId) return;
+    let rowIndex = 0;
 
-                fetch(`/penjualan/delivery-note/${dnId}/details`) // ✅ fetch untuk penjualan
-                    .then(res => res.json())
-                    .then(data => {
-                        itemsTable.innerHTML = '';
-                        rowIndex = 0;
-                        if (data.length == 0) {
-                            customerInput.value = '';
-                            return;
-                        }
+    function calculateRow(row) {
+        let qty = parseFloat(row.querySelector('.qty').value) || 0;
+        let harga = parseFloat(row.querySelector('.harga').value) || 0;
 
-                        // Set customer dari item pertama
-                        customerInput.value = data[0].customer_name || '';
+        row.querySelector('.subtotal-detail').value = (qty * harga).toFixed(2);
 
-                        data.forEach(item => {
-                            let row = document.createElement('tr');
-                            row.innerHTML = `
-                                                <td>
-                                                    ${item.nama_barang}
-                                                    <input type="hidden" name="details[${rowIndex}][barang_id]" value="${item.barang_id}">
-                                                    <input type="hidden" name="details[${rowIndex}][order_detail_id]" value="${item.order_detail_id}">
-                                                </td>
-                                                <td><input type="number" name="details[${rowIndex}][qty]" class="form-control qty" value="${item.qty}" readonly></td>
-                                                <td><input type="number" name="details[${rowIndex}][harga]" class="form-control harga" value="${item.harga}" readonly style="background-color:#e9ecef;"></td>
-                                                <td><input type="number" name="details[${rowIndex}][subtotal]" class="form-control subtotal-detail" readonly style="background-color:#e9ecef;"></td>
-                                                <td><button type="button" class="btn btn-danger btn-sm remove-row">-</button></td>
-                                            `;
-                            itemsTable.appendChild(row);
-                            calculateRow(row);
-                            rowIndex++;
-                        });
+        calculateTotal();
+    }
 
-                        // Hitung total awal
-                        calculateTotal();
-                    });
-            });
+    function calculateTotal() {
 
-            // Hapus row
-            itemsTable.addEventListener('click', function (e) {
-                if (e.target.classList.contains('remove-row')) {
-                    e.target.closest('tr').remove();
-                    calculateTotal();
-                }
-            });
+        let dpp = 0;
 
-            // Hitung subtotal saat input harga
-            itemsTable.addEventListener('input', function (e) {
-                if (e.target.classList.contains('harga')) {
-                    calculateRow(e.target.closest('tr'));
-                }
-            });
+        document.querySelectorAll('.subtotal-detail').forEach(input => {
+            dpp += parseFloat(input.value) || 0;
         });
 
-        const ongkirCheckbox = document.getElementById('pakai_ongkir');
-        const ongkirFields = document.getElementById('ongkir-fields');
+        let mode = ppnMode ? ppnMode.value : 'ppn';
+
+        let pajak = 0;
+
+        if (mode === 'ppn') {
+            pajak = dpp * 0.11;
+        }
+
+        let total = dpp + pajak;
+
+        document.getElementById('dpp').value = dpp.toFixed(2);
+        document.getElementById('pajak').value = pajak.toFixed(2);
+        document.getElementById('total').value = total.toFixed(2);
+    }
+
+    // 🔹 event dropdown pajak
+    if (ppnMode) {
+        ppnMode.addEventListener('change', function () {
+            calculateTotal();
+        });
+    }
+
+    // 🔹 ambil data delivery note
+    deliverySelect.addEventListener('change', function () {
+
+        const dnId = this.value;
+
+        if (!dnId) return;
+
+        fetch(`/penjualan/delivery-note/${dnId}/details`)
+        .then(res => res.json())
+        .then(data => {
+
+            itemsTable.innerHTML = '';
+            rowIndex = 0;
+
+            if (data.length == 0) {
+                customerInput.value = '';
+                return;
+            }
+
+            // set customer
+            customerInput.value = data[0].customer_name || '';
+
+            data.forEach(item => {
+
+                let row = document.createElement('tr');
+
+                row.innerHTML = `
+                    <td>
+                        ${item.nama_barang}
+                        <input type="hidden" name="details[${rowIndex}][barang_id]" value="${item.barang_id}">
+                        <input type="hidden" name="details[${rowIndex}][order_detail_id]" value="${item.order_detail_id}">
+                    </td>
+
+                    <td>
+                        <input type="number" name="details[${rowIndex}][qty]" 
+                        class="form-control qty" value="${item.qty}" readonly>
+                    </td>
+
+                    <td>
+                        <input type="number" name="details[${rowIndex}][harga]" 
+                        class="form-control harga" value="${item.harga}" 
+                        readonly style="background-color:#e9ecef;">
+                    </td>
+
+                    <td>
+                        <input type="number" name="details[${rowIndex}][subtotal]" 
+                        class="form-control subtotal-detail" readonly 
+                        style="background-color:#e9ecef;">
+                    </td>
+
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm remove-row">-</button>
+                    </td>
+                `;
+
+                itemsTable.appendChild(row);
+
+                calculateRow(row);
+
+                rowIndex++;
+
+            });
+
+            calculateTotal();
+
+        });
+
+    });
+
+    // 🔹 hapus row
+    itemsTable.addEventListener('click', function (e) {
+
+        if (e.target.classList.contains('remove-row')) {
+
+            e.target.closest('tr').remove();
+
+            calculateTotal();
+
+        }
+
+    });
+
+    // 🔹 hitung ulang kalau harga diubah
+    itemsTable.addEventListener('input', function (e) {
+
+        if (e.target.classList.contains('harga')) {
+
+            calculateRow(e.target.closest('tr'));
+
+        }
+
+    });
+
+    // 🔹 toggle ongkir
+    if (ongkirCheckbox) {
 
         ongkirCheckbox.addEventListener('change', function () {
+
             if (this.checked) {
                 ongkirFields.style.display = 'block';
             } else {
                 ongkirFields.style.display = 'none';
             }
+
         });
-    </script>
+
+    }
+
+});
+</script>
 @endsection

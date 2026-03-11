@@ -9,18 +9,9 @@ if (!function_exists('generateDocumentNumber')) {
         $year = date('Y');
 
         $romanMonths = [
-            '01' => 'I',
-            '02' => 'II',
-            '03' => 'III',
-            '04' => 'IV',
-            '05' => 'V',
-            '06' => 'VI',
-            '07' => 'VII',
-            '08' => 'VIII',
-            '09' => 'IX',
-            '10' => 'X',
-            '11' => 'XI',
-            '12' => 'XII'
+            '01' => 'I','02' => 'II','03' => 'III','04' => 'IV',
+            '05' => 'V','06' => 'VI','07' => 'VII','08' => 'VIII',
+            '09' => 'IX','10' => 'X','11' => 'XI','12' => 'XII'
         ];
 
         $romanMonth = $romanMonths[$month];
@@ -29,15 +20,20 @@ if (!function_exists('generateDocumentNumber')) {
             ->whereYear('created_at', $year)
             ->whereMonth('created_at', $month);
 
-        // filter type jika ada
         if ($type) {
             $query->where('type', $type);
         }
 
-        $count = $query->count();
+        // ambil nomor dokumen terakhir
+        $lastDoc = $query->orderBy('id','desc')->value('no');
 
-        $nextNumber = str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+        if ($lastDoc) {
+            $lastNumber = intval(substr($lastDoc, 0, 3));
+            $nextNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+        } else {
+            $nextNumber = '001';
+        }
 
-        return $nextNumber . '/' . $prefix . '/' . $romanMonth . '/' . $year;
+        return $nextNumber.'/'.$prefix.'/'.$romanMonth.'/'.$year;
     }
 }
