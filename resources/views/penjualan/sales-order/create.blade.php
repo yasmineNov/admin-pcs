@@ -14,7 +14,7 @@
                     <div class="col-md-3">
                         <label>No. SO</label>
                         <input type="text" name="no" class="form-control"
-                            value="{{ generateDocumentNumber('orders', 'PCS-SO') }}" readonly
+                            value="{{ generateDocumentNumber('orders', 'PCS-SO', 'sales') }}" readonly
                             style="background-color: #e9ecef;">
                     </div>
 

@@ -26,8 +26,8 @@
                     <thead class="bg-secondary text-white">
                         <tr>
                             <th style="width:70px;">No</th>
-                            <th>No. PO</th>
                             <th>Tanggal PO</th>
+                            <th>No. PO</th>
                             <th>Supplier</th>
                             <th class="text-end">Nominal</th>
                             <th>Keterangan</th>
@@ -41,8 +41,8 @@
                                 <td>
                                     {{ ($orders->currentPage() - 1) * $orders->perPage() + $loop->iteration }}
                                 </td>
-                                <td>{{ $po->no }}</td>
                                 <td>{{ $po->tgl->format('d-m-Y') }}</td>
+                                <td>{{ $po->no }}</td>
                                 <td>{{ $po->supplier->nama_supplier ?? '-' }}</td>
                                 <td class="text-end">{{ number_format($po->dpp, 0, ',', '.') }}</td>
                                 <td>{{ $po->keterangan ?? '-' }}</td>

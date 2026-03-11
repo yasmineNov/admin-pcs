@@ -11,10 +11,15 @@
         <div class="card-body">
 
             <div class="row mb-2">
-                <div class="col-md-3">
+                {{-- <div class="col-md-3">
                     <label>No. PO</label>
                     <input type="text" name="no" class="form-control" value="{{ generateDocumentNumber('orders','PCS-PO') }}" readonly style="background-color: #e9ecef;">
-                </div>
+                </div> --}}
+    <div class="col-md-3">
+        <label>No. PO</label>
+        <input type="text" name="no" class="form-control">
+    </div>
+
 
                 <div class="col-md-2">
                     <label>Tanggal PO</label>
@@ -218,49 +223,59 @@ document.getElementById('items-table').addEventListener('click', function(e){
 
 $(document).ready(function(){
 
-    function initSelect2(){
-        $('.barang-select').select2({
-            placeholder: "cari barang",
-            width: '80%',
+    /* ===============================
+       INIT SELECT2
+    =============================== */
+
+    function initSelect2(element){
+        element.select2({
+            placeholder: "Cari barang",
+            width: '100%'
         });
     }
 
-    initSelect2();
+    initSelect2($('.barang-select'));
+
+
+    /* ===============================
+       HITUNG SUBTOTAL PER ROW
+    =============================== */
 
     function calculateRow(row){
 
-        let qtyInput = row.querySelector('.qty');
-        let hargaInput = row.querySelector('.harga');
-        let subtotalInput = row.querySelector('.subtotal-detail');
-
-        let qty = parseFloat(qtyInput.value);
-        let harga = parseFloat(hargaInput.value);
+        let qty = parseFloat($(row).find('.qty').val());
+        let harga = parseFloat($(row).find('.harga').val());
 
         if(isNaN(qty)) qty = 0;
         if(isNaN(harga)) harga = 0;
 
         let subtotal = qty * harga;
 
-        subtotalInput.value = subtotal.toFixed(2);
+        $(row).find('.subtotal-detail').val(subtotal.toFixed(2));
 
         calculateTotal();
     }
+
+
+    /* ===============================
+       HITUNG TOTAL
+    =============================== */
 
     function calculateTotal(){
 
         let dpp = 0;
 
-        document.querySelectorAll('.subtotal-detail').forEach(function(input){
+        $('.subtotal-detail').each(function(){
 
-            let value = parseFloat(input.value);
+            let val = parseFloat($(this).val());
 
-            if(!isNaN(value)){
-                dpp += value;
+            if(!isNaN(val)){
+                dpp += val;
             }
 
         });
 
-        let usePpn = document.getElementById('use_ppn').value;
+        let usePpn = $('#use_ppn').val();
 
         let pajak = 0;
 
@@ -270,33 +285,44 @@ $(document).ready(function(){
 
         let total = dpp + pajak;
 
-        document.getElementById('dpp').value = dpp.toFixed(2);
-        document.getElementById('pajak').value = pajak.toFixed(2);
-        document.getElementById('total').value = total.toFixed(2);
+        $('#dpp').val(dpp.toFixed(2));
+        $('#pajak').val(pajak.toFixed(2));
+        $('#total').val(total.toFixed(2));
     }
 
 
-    // 🔵 EVENT PPN DIPINDAH KE SINI
-    $('#use_ppn').on('change', function(){
-        calculateTotal();
-    });
-
+    /* ===============================
+       TAMBAH ROW BARANG
+    =============================== */
 
     $('#add-row').click(function(){
 
         let tbody = $('#items-table tbody');
         let firstRow = tbody.find('tr:first');
+
+        // destroy select2 sebelum clone
+        firstRow.find('.barang-select').select2('destroy');
+
+        // clone row
         let newRow = firstRow.clone();
 
+        // reset input
         newRow.find('input').val('');
-        newRow.find('select').val('');
+
+        // reset select
+        newRow.find('select').prop('selectedIndex',0);
 
         tbody.append(newRow);
 
-        initSelect2();
+        // init select2 lagi
+        initSelect2($('.barang-select'));
 
     });
 
+
+    /* ===============================
+       HAPUS ROW
+    =============================== */
 
     $('#items-table').on('click','.remove-row',function(){
 
@@ -307,21 +333,36 @@ $(document).ready(function(){
             $(this).closest('tr').remove();
 
             calculateTotal();
+
         }
 
     });
 
 
+    /* ===============================
+       AUTO HITUNG SAAT INPUT
+    =============================== */
+
     $('#items-table').on('input','.qty, .harga',function(){
 
-        let row = $(this).closest('tr')[0];
+        let row = $(this).closest('tr');
 
         calculateRow(row);
 
     });
 
-});
 
+    /* ===============================
+       TOGGLE PPN
+    =============================== */
+
+    $('#use_ppn').on('change',function(){
+
+        calculateTotal();
+
+    });
+
+});
 </script>
 
 @endsection

@@ -3,7 +3,7 @@ use Illuminate\Support\Facades\DB;
 
 if (!function_exists('generateDocumentNumber')) {
 
-    function generateDocumentNumber($table, $prefix)
+    function generateDocumentNumber($table, $prefix, $type = null)
     {
         $month = date('m');
         $year = date('Y');
@@ -25,10 +25,16 @@ if (!function_exists('generateDocumentNumber')) {
 
         $romanMonth = $romanMonths[$month];
 
-        $count = DB::table($table)
+        $query = DB::table($table)
             ->whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->count();
+            ->whereMonth('created_at', $month);
+
+        // filter type jika ada
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        $count = $query->count();
 
         $nextNumber = str_pad($count + 1, 3, '0', STR_PAD_LEFT);
 
