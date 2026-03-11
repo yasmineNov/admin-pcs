@@ -87,13 +87,39 @@
         <tr>
 
             <td width="50%">
-                No SJ : {{ $invoice->deliveryNote->no }}<br>
-                No Faktur : {{ $invoice->no }}
+
+                <table>
+                    <tr>
+                        <td width="90">No SJ</td>
+                        <td width="10">:</td>
+                        <td>{{ $invoice->deliveryNote->no }}</td>
+                    </tr>
+
+                    <tr>
+                        <td>No Faktur</td>
+                        <td>:</td>
+                        <td>{{ $invoice->no }}</td>
+                    </tr>
+                </table>
+
             </td>
 
             <td width="50%">
-                No PO : {{ $invoice->deliveryNote->order->no }}<br>
-                Tanggal : {{ $invoice->tgl->format('d-m-Y') }}
+
+                <table>
+                    <tr>
+                        <td width="90">No PO</td>
+                        <td width="10">:</td>
+                        <td>{{ $invoice->deliveryNote->order->no }}</td>
+                    </tr>
+
+                    <tr>
+                        <td>Tanggal</td>
+                        <td>:</td>
+                        <td>{{ $invoice->tgl->format('d-m-Y') }}</td>
+                    </tr>
+                </table>
+
             </td>
 
         </tr>
@@ -132,9 +158,9 @@
                 <tr>
                     <td class="text-center">{{ $loop->iteration }}</td>
                     <td>{{ $detail->orderDetail->barang->nama_barang }}</td>
-                    <td >{{ $qty }}</td>
-                    <td >{{ number_format($harga, 0, ',', '.') }}</td>
-                    <td >{{ number_format($total, 0, ',', '.') }}</td>
+                    <td>{{ $qty }}</td>
+                    <td>{{ number_format($harga, 0, ',', '.') }}</td>
+                    <td>{{ number_format($total, 0, ',', '.') }}</td>
                 </tr>
 
             @endforeach
@@ -160,17 +186,17 @@
 
                     <tr>
                         <td>DPP</td>
-                        <td class="text-right">Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
+                        <td>Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
                     </tr>
 
                     <tr>
                         <td>PPN 11%</td>
-                        <td class="text-right">Rp {{ number_format($ppn, 0, ',', '.') }}</td>
+                        <td>Rp {{ number_format($ppn, 0, ',', '.') }}</td>
                     </tr>
 
                     <tr>
                         <td><b>Total</b></td>
-                        <td class="text-right">
+                        <td>
                             <b>Rp {{ number_format($grandTotal, 0, ',', '.') }}</b>
                         </td>
                     </tr>
