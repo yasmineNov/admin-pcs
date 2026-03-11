@@ -11,6 +11,8 @@ use App\Models\OrderDetail;
 use App\Models\Supplier;
 use App\Models\DeliveryNote;
 use App\Models\Customer;
+use App\Models\InvoiceOngkir;
+use App\Models\Kas;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -539,12 +541,14 @@ class InvoiceController extends Controller
                     break;
 
                 $sudahDibayar = $invoice->paymentDetails->sum('subtotal');
-                $kurang = $invoice->grand_total - $sudahDibayar;
+
+                $totalTagihan = $invoice->grand_total + $invoice->ongkirs->sum('nominal');
+
+                $kurang = $totalTagihan - $sudahDibayar;
 
                 if ($kurang <= 0)
                     continue;
 
-                // bayar sebagian atau penuh
                 $bayar = min($sisaUang, $kurang);
 
                 PaymentDetail::create([
@@ -553,10 +557,9 @@ class InvoiceController extends Controller
                     'subtotal' => $bayar
                 ]);
 
-                // update kolom paid
                 $invoice->paid += $bayar;
 
-                if ($invoice->paid >= $invoice->grand_total) {
+                if ($invoice->paid >= $totalTagihan) {
                     $invoice->status = 'paid';
                 } else {
                     $invoice->status = 'partial';
@@ -599,30 +602,57 @@ class InvoiceController extends Controller
     {
         $invoices = Invoice::with('paymentDetails')
             ->where('customer_id', $customerId)
-            ->where('type', 'out') // invoice penjualan
+            ->where('type', 'out')
             ->orderBy('tgl', 'asc')
             ->get();
 
-        $data = $invoices->map(function ($inv) {
+        $data = collect();
+
+        foreach ($invoices as $inv) {
 
             $paid = $inv->paymentDetails->sum('subtotal');
-            $sisa = $inv->grand_total - $paid;
 
-            if ($sisa <= 0)
-                return null;
+            $barangPaid = min($paid, $inv->grand_total);
+            $barangSisa = $inv->grand_total - $barangPaid;
 
-            return [
-                'tgl' => $inv->tgl->format('d-m-Y'),
-                'no' => $inv->no,
-                'no_so' => $inv->no_so,
-                'jatuh_tempo' => optional($inv->jatuh_tempo)->format('d-m-Y'),
-                'total' => number_format($inv->grand_total, 0, ',', '.'),
-                'paid' => number_format($paid, 0, ',', '.'),
-                'sisa' => number_format($sisa, 0, ',', '.')
-            ];
-        })->filter()->values();
+            $sisaPayment = max(0, $paid - $inv->grand_total);
 
-        return response()->json($data);
+            if ($barangSisa > 0) {
+                $data->push([
+                    'tgl' => $inv->tgl->format('d-m-Y'),
+                    'no' => $inv->no,
+                    'no_so' => $inv->no_so,
+                    'jatuh_tempo' => optional($inv->jatuh_tempo)->format('d-m-Y'),
+                    'total' => number_format($inv->grand_total, 0, ',', '.'),
+                    'paid' => number_format($barangPaid, 0, ',', '.'),
+                    'sisa' => number_format($barangSisa, 0, ',', '.'),
+                ]);
+            }
+
+            foreach ($inv->ongkirs as $ongkir) {
+
+                $ongkirPaid = min($sisaPayment, $ongkir->nominal);
+                $ongkirSisa = $ongkir->nominal - $ongkirPaid;
+
+                if ($ongkirSisa > 0) {
+
+                    $data->push([
+                        'tgl' => $inv->tgl->format('d-m-Y'),
+                        'no' => 'ONGKIR - ' . ($ongkir->no ?? '-'),
+                        'no_so' => $inv->no,
+                        'jatuh_tempo' => optional($inv->jatuh_tempo)->format('d-m-Y'),
+                        'total' => number_format($ongkir->nominal, 0, ',', '.'),
+                        'paid' => number_format($ongkirPaid, 0, ',', '.'),
+                        'sisa' => number_format($ongkirSisa, 0, ',', '.'),
+                    ]);
+
+                }
+
+                $sisaPayment -= $ongkirPaid;
+            }
+        }
+
+        return response()->json($data->values());
     }
 
     public function bayarPiutang(Request $request)
@@ -640,19 +670,21 @@ class InvoiceController extends Controller
             $customerId = $request->customer_id;
             $sisaUang = (int) $request->jumlah_bayar;
 
-            // Ambil invoice piutang (type out)
-            $invoices = Invoice::with('paymentDetails')
+            $invoices = Invoice::with(['paymentDetails', 'ongkirs'])
                 ->where('customer_id', $customerId)
-                ->where('type', 'out') // invoice penjualan
+                ->where('type', 'out')
                 ->orderBy('tgl', 'asc')
                 ->get();
 
-            // Hitung total sisa piutang
             $totalSisa = 0;
 
             foreach ($invoices as $inv) {
+
                 $paid = $inv->paymentDetails->sum('subtotal');
-                $kurang = $inv->grand_total - $paid;
+
+                $totalTagihan = $inv->grand_total_with_ongkir;
+
+                $kurang = $totalTagihan - $paid;
 
                 if ($kurang > 0) {
                     $totalSisa += $kurang;
@@ -663,7 +695,6 @@ class InvoiceController extends Controller
                 throw new \Exception('Jumlah bayar melebihi total piutang.');
             }
 
-            // Buat payment (uang masuk)
             $payment = Payment::create([
                 'total' => $request->jumlah_bayar,
                 'keterangan' => 'Pelunasan Piutang - ' . $request->metode,
@@ -678,7 +709,10 @@ class InvoiceController extends Controller
                     break;
 
                 $sudahDibayar = $invoice->paymentDetails->sum('subtotal');
-                $kurang = $invoice->grand_total - $sudahDibayar;
+
+                $totalTagihan = $invoice->grand_total_with_ongkir;
+
+                $kurang = $totalTagihan - $sudahDibayar;
 
                 if ($kurang <= 0)
                     continue;
@@ -693,7 +727,7 @@ class InvoiceController extends Controller
 
                 $invoice->paid += $bayar;
 
-                if ($invoice->paid >= $invoice->grand_total) {
+                if ($invoice->paid >= $totalTagihan) {
                     $invoice->status = 'paid';
                 } else {
                     $invoice->status = 'partial';
@@ -856,6 +890,35 @@ class InvoiceController extends Controller
 
             }
 
+            //ongkir
+            if ($request->filled('ongkir_nominal') && $request->ongkir_nominal > 0) {
+
+                $ongkir = InvoiceOngkir::create([
+                    'invoice_id' => $invoice->id,
+                    'no' => $request->ongkir_no,
+                    'nominal' => $request->ongkir_nominal,
+                    'keterangan' => $request->ongkir_keterangan,
+                ]);
+
+                // =========================
+                // Catat pengeluaran Kas
+                // =========================
+
+                $saldoTerakhir = Kas::latest('id')->value('saldo') ?? 0;
+
+                $saldoBaru = $saldoTerakhir - $ongkir->nominal;
+
+                Kas::create([
+                    'tanggal' => $request->tgl,
+                    'no_transaksi' => $ongkir->no,
+                    'keterangan' => 'Ongkir ke customer dengan no ongkir ' . $ongkir->no,
+                    'debit' => 0,
+                    'kredit' => $ongkir->nominal,
+                    'saldo' => $saldoBaru,
+                    'jenis' => 'pendanaan',
+                ]);
+            }
+
             DB::commit();
 
             return redirect()
@@ -1009,7 +1072,8 @@ class InvoiceController extends Controller
     {
         $invoice = Invoice::with([
             'deliveryNote.details.orderDetail.barang',
-            'deliveryNote.order.customer'
+            'deliveryNote.order.customer',
+            'ongkirs'
         ])->findOrFail($id);
 
         return view('penjualan.invoice.detail', compact('invoice'));
@@ -1047,6 +1111,19 @@ class InvoiceController extends Controller
         $pdf = Pdf::loadView('penjualan.invoice.printDot', compact('invoice'));
 
         $filename = 'invoice-' . str_replace(['/', '\\'], '-', $invoice->no) . '.pdf';
+
+        return $pdf->stream($filename);
+    }
+    public function printOngkir($id)
+    {
+        $invoice = Invoice::with([
+            'deliveryNote.order.customer',
+            'ongkirs'
+        ])->findOrFail($id);
+
+        $pdf = Pdf::loadView('penjualan.invoice.printOngkir', compact('invoice'));
+
+        $filename = 'invoice-ongkir-' . str_replace(['/', '\\'], '-', $invoice->no) . '.pdf';
 
         return $pdf->stream($filename);
     }

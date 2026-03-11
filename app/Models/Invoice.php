@@ -62,13 +62,13 @@ class Invoice extends Model
         return $this->belongsTo(DeliveryNote::class);
     }
     public function order()
-{
-    return $this->belongsTo(Orders::class, 'order_id'); // pastikan field foreign key 'order_id' ada di table invoices
-}
-public function paymentDetails()
-{
-    return $this->hasMany(PaymentDetail::class);
-}
+    {
+        return $this->belongsTo(Orders::class, 'order_id'); // pastikan field foreign key 'order_id' ada di table invoices
+    }
+    public function paymentDetails()
+    {
+        return $this->hasMany(PaymentDetail::class);
+    }
 
 
     /*
@@ -91,5 +91,20 @@ public function paymentDetails()
     public function details()
     {
         return $this->hasMany(InvoiceDetail::class);
+    }
+
+    //ongkir
+    public function ongkirs()
+    {
+        return $this->hasMany(InvoiceOngkir::class);
+    }
+    public function getTotalOngkirAttribute()
+    {
+        return $this->ongkirs->sum('nominal');
+    }
+
+    public function getGrandTotalWithOngkirAttribute()
+    {
+        return $this->grand_total + $this->total_ongkir;
     }
 }

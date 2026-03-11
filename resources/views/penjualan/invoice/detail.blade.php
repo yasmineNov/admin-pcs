@@ -5,6 +5,9 @@
 <a href="{{ route('invSales.printDot', $invoice->id) }}" target="_blank" class="btn btn-secondary">
     Print Dot Matrix
 </a>
+<a href="{{ route('invSales.printOngkir', $invoice->id) }}" target="_blank" class="btn btn-info">
+    Print Invoice Ongkir
+</a>
 
 <h5>Informasi Invoice</h5>
 <table class="table table-bordered">
@@ -99,3 +102,40 @@
         </td>
     </tr>
 </table>
+
+<hr>
+
+<h5>Informasi Ongkir</h5>
+
+@if($invoice->ongkirs->count() > 0)
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>No Ongkir / Resi</th>
+                <th>Keterangan</th>
+                <th class="text-end">Nominal</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            @foreach($invoice->ongkirs as $ongkir)
+                <tr>
+                    <td>{{ $ongkir->no ?? '-' }}</td>
+                    <td>{{ $ongkir->keterangan ?? '-' }}</td>
+                    <td class="text-end">
+                        {{ number_format($ongkir->nominal, 2) }}
+                    </td>
+                </tr>
+            @endforeach
+
+        </tbody>
+    </table>
+
+@else
+
+    <div class="text-muted">
+        Tidak ada ongkir
+    </div>
+
+@endif

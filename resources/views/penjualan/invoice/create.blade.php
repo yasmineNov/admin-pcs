@@ -96,6 +96,34 @@
                             style="background-color:#e9ecef;">
                     </div>
                 </div>
+                <hr>
+                <h5>Ongkir</h5>
+
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="pakai_ongkir">
+                    <label class="form-check-label">
+                        Tambahkan Ongkir
+                    </label>
+                </div>
+
+                <div id="ongkir-fields" style="display:none;">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label>No Ongkir / Resi</label>
+                            <input type="text" name="ongkir_no" class="form-control">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label>Nominal Ongkir</label>
+                            <input type="number" name="ongkir_nominal" class="form-control">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label>Keterangan</label>
+                            <input type="text" name="ongkir_keterangan" class="form-control">
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="card-footer">
@@ -153,16 +181,16 @@
                         data.forEach(item => {
                             let row = document.createElement('tr');
                             row.innerHTML = `
-                                        <td>
-                                            ${item.nama_barang}
-                                            <input type="hidden" name="details[${rowIndex}][barang_id]" value="${item.barang_id}">
-                                            <input type="hidden" name="details[${rowIndex}][order_detail_id]" value="${item.order_detail_id}">
-                                        </td>
-                                        <td><input type="number" name="details[${rowIndex}][qty]" class="form-control qty" value="${item.qty}" readonly></td>
-                                        <td><input type="number" name="details[${rowIndex}][harga]" class="form-control harga" value="${item.harga}" readonly style="background-color:#e9ecef;"></td>
-                                        <td><input type="number" name="details[${rowIndex}][subtotal]" class="form-control subtotal-detail" readonly style="background-color:#e9ecef;"></td>
-                                        <td><button type="button" class="btn btn-danger btn-sm remove-row">-</button></td>
-                                    `;
+                                                <td>
+                                                    ${item.nama_barang}
+                                                    <input type="hidden" name="details[${rowIndex}][barang_id]" value="${item.barang_id}">
+                                                    <input type="hidden" name="details[${rowIndex}][order_detail_id]" value="${item.order_detail_id}">
+                                                </td>
+                                                <td><input type="number" name="details[${rowIndex}][qty]" class="form-control qty" value="${item.qty}" readonly></td>
+                                                <td><input type="number" name="details[${rowIndex}][harga]" class="form-control harga" value="${item.harga}" readonly style="background-color:#e9ecef;"></td>
+                                                <td><input type="number" name="details[${rowIndex}][subtotal]" class="form-control subtotal-detail" readonly style="background-color:#e9ecef;"></td>
+                                                <td><button type="button" class="btn btn-danger btn-sm remove-row">-</button></td>
+                                            `;
                             itemsTable.appendChild(row);
                             calculateRow(row);
                             rowIndex++;
@@ -187,6 +215,17 @@
                     calculateRow(e.target.closest('tr'));
                 }
             });
+        });
+
+        const ongkirCheckbox = document.getElementById('pakai_ongkir');
+        const ongkirFields = document.getElementById('ongkir-fields');
+
+        ongkirCheckbox.addEventListener('change', function () {
+            if (this.checked) {
+                ongkirFields.style.display = 'block';
+            } else {
+                ongkirFields.style.display = 'none';
+            }
         });
     </script>
 @endsection

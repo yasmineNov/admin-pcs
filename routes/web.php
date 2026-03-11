@@ -198,6 +198,8 @@ Route::get('/invSales/{id}/print', [InvoiceController::class, 'print'])
     ->name('invSales.print');
 Route::get('/invSales/{id}/printDot', [InvoiceController::class, 'printDot'])
     ->name('invSales.printDot');
+Route::get('/invoice/{id}/print-ongkir', [InvoiceController::class, 'printOngkir'])
+    ->name('invSales.printOngkir');
 
 Route::get('/penjualan/data/export', [InvoiceController::class, 'exportPenjualan'])->name('penjualan.data.export');
 Route::get('/penjualan/data/print', [InvoiceController::class, 'printPenjualan'])->name('penjualan.data.print');
