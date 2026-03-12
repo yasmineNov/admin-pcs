@@ -8,6 +8,7 @@ use App\Models\Absensi;
 use App\Models\AbsensiUser;
 use App\Models\SewaKendaraan;
 use App\Models\PremiHadir;
+use App\Models\Kas;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
@@ -78,13 +79,19 @@ class AbsensiController extends Controller
     {
         DB::beginTransaction();
         try {
+            // 1. Simpan Header Absensi
             $absensi = Absensi::create([
                 'tanggal_mulai' => $request->start_date,
                 'tanggal_akhir' => $request->end_date,
                 'keterangan' => "Absensi Periode {$request->start_date} s/d {$request->end_date}",
             ]);
 
+            // Variabel penampung total keseluruhan untuk Kas
+            $grandTotalPremi = 0;
+            $grandTotalSewa = 0;
+
             foreach ($request->kehadiran as $userId => $dates) {
+                // 2. Simpan Detail Hari Absensi
                 foreach ($dates as $tanggal) {
                     AbsensiUser::create([
                         'absensi_id' => $absensi->id,
@@ -95,30 +102,72 @@ class AbsensiController extends Controller
 
                 $totalHadir = count($dates);
 
+                // Ambil Master Nominal
                 $masterPremi = PremiUser::where('user_id', $userId)->first();
                 $nominalPremi = $masterPremi ? $masterPremi->nominal : 0;
 
                 $masterSewa = SewaKendaraan::where('user_id', $userId)->first();
                 $nominalSewa = $masterSewa ? $masterSewa->nominal : 0;
 
+                // Hitung Subtotal per User
+                $subtotalPremi = $totalHadir * $nominalPremi;
+                $subtotalSewa = $totalHadir * $nominalSewa;
+
+                // 3. Simpan Rekap Premi per User
                 PremiHadir::create([
                     'user_id' => $userId,
                     'absensi_id' => $absensi->id,
                     'total_hadir' => $totalHadir,
                     'nominal_premi_harian' => $nominalPremi,
                     'nominal_sewa_harian' => $nominalSewa,
-                    'subtotal_premi' => $totalHadir * $nominalPremi,
-                    'subtotal_sewa' => $totalHadir * $nominalSewa,
-                    'total_keseluruhan' => $totalHadir * ($nominalPremi + $nominalSewa),
+                    'subtotal_premi' => $subtotalPremi,
+                    'subtotal_sewa' => $subtotalSewa,
+                    'total_keseluruhan' => $subtotalPremi + $subtotalSewa,
                     'status' => 'pending',
+                ]);
+
+                // Tambahkan ke Grand Total untuk pencatatan Kas nanti
+                $grandTotalPremi += $subtotalPremi;
+                $grandTotalSewa += $subtotalSewa;
+            }
+
+            // --- PENCATATAN KAS ---
+
+            // A. Catat Kas untuk Total Premi Hadir
+            if ($grandTotalPremi > 0) {
+                $saldo1 = Kas::latest('id')->value('saldo') ?? 0;
+                Kas::create([
+                    'tanggal' => now(), // atau pakai $request->end_date
+                    'no_transaksi' => 'KAS-PRM-' . $absensi->id . '-' . time(),
+                    'keterangan' => "Pembayaran Total Premi Hadir Periode {$request->start_date} - {$request->end_date}",
+                    'debit' => 0,
+                    'kredit' => $grandTotalPremi,
+                    'saldo' => $saldo1 - $grandTotalPremi,
+                    'jenis' => 'pendanaan',
+                ]);
+            }
+
+            // B. Catat Kas untuk Total Sewa Kendaraan
+            if ($grandTotalSewa > 0) {
+                // Ambil saldo terbaru lagi karena mungkin sudah berubah oleh transaksi premi di atas
+                $saldo2 = Kas::latest('id')->value('saldo') ?? 0;
+                Kas::create([
+                    'tanggal' => now(),
+                    'no_transaksi' => 'KAS-SWA-' . $absensi->id . '-' . time(),
+                    'keterangan' => "Pembayaran Total Sewa Kendaraan Periode {$request->start_date} - {$request->end_date}",
+                    'debit' => 0,
+                    'kredit' => $grandTotalSewa,
+                    'saldo' => $saldo2 - $grandTotalSewa,
+                    'jenis' => 'pendanaan',
                 ]);
             }
 
             DB::commit();
             return response()->json([
                 'status' => 'success',
-                'message' => 'Absensi dan Premi berhasil dihitung!',
+                'message' => 'Absensi berhasil disimpan dan saldo Kas telah diperbarui!',
             ]);
+
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
