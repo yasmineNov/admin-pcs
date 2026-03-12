@@ -23,10 +23,24 @@
         <th>Status</th>
         <td>{{ $invoice->status }}</td>
     </tr>
-    <tr>
-        <th>No Surat Jalan</th>
-        <td>{{ $invoice->deliveryNote->no }}</td>
-    </tr>
+</table>
+
+<h5>Surat Jalan</h5>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th width="30%">Tanggal</th>
+            <th>No Surat Jalan</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($invoice->deliveryNote as $dn)
+            <tr>
+                <td>{{ $dn->tgl->format('d-m-Y') }}</td>
+                <td>{{ $dn->no }}</td>
+            </tr>
+        @endforeach
+    </tbody>
 </table>
 
 <hr>
@@ -36,11 +50,11 @@
 <table class="table table-bordered">
     <tr>
         <th>No Order</th>
-        <td>{{ $invoice->deliveryNote->order->no ?? '-' }}</td>
+        <td>{{ $invoice->order->no ?? '-' }}</td>
     </tr>
     <tr>
         <th>Customer</th>
-        <td>{{ $invoice->deliveryNote->order->customer->nama_customer ?? '-' }}</td>
+        <td>{{ $invoice->customer->nama_customer ?? '-' }}</td>
     </tr>
 </table>
 
@@ -62,19 +76,22 @@
         </tr>
     </thead>
     <tbody>
-        @foreach($invoice->deliveryNote->details as $detail)
+        @foreach($invoice->details as $detail)
+
             @php
                 $harga = $detail->orderDetail->harga ?? 0;
                 $qty = $detail->qty ?? 0;
-                $lineTotal = $qty * $harga;
+                $lineTotal = $detail->subtotal ?? ($qty * $harga);
                 $subtotal += $lineTotal;
             @endphp
+
             <tr>
                 <td>{{ $detail->orderDetail->barang->nama_barang ?? '-' }}</td>
                 <td class="text-end">{{ number_format($qty, 2) }}</td>
                 <td class="text-end">{{ number_format($harga, 2) }}</td>
                 <td class="text-end">{{ number_format($lineTotal, 2) }}</td>
             </tr>
+
         @endforeach
     </tbody>
 </table>

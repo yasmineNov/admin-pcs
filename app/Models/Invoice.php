@@ -57,9 +57,17 @@ class Invoice extends Model
         return $this->belongsTo(Supplier::class);
     }
 
-    public function deliveryNote()
+    public function deliveryNoteOld()
     {
         return $this->belongsTo(DeliveryNote::class);
+    }
+
+    public function deliveryNote()
+    {
+        return $this->belongsToMany(
+            DeliveryNote::class,
+            'invoice_delivery_notes'
+        )->withPivot('keterangan')->withTimestamps();
     }
     public function order()
     {
@@ -107,4 +115,6 @@ class Invoice extends Model
     {
         return $this->grand_total + $this->total_ongkir;
     }
+
+    
 }

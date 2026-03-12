@@ -20,11 +20,11 @@
 <table class="table table-bordered">
     <tr>
         <th>No Order</th>
-        <td>{{ $invoice->deliveryNote->order->no ?? '-' }}</td>
+        <td>{{ $invoice->order->no ?? '-' }}</td>
     </tr>
     <tr>
         <th>Customer</th>
-        <td>{{ $invoice->deliveryNote->order->customer->nama_customer ?? '-' }}</td>
+        <td>{{ $invoice->order->customer->nama_customer ?? '-' }}</td>
     </tr>
 </table>
 
@@ -46,7 +46,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach($invoice->deliveryNote->details as $detail)
+        @foreach($invoice->details as $detail)
             @php
                 $harga = $detail->orderDetail->harga ?? 0;
                 $qty = $detail->qty ?? 0;

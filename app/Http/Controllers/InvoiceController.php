@@ -779,50 +779,84 @@ class InvoiceController extends Controller
 
     public function storeMasuk(Request $request)
     {
-
         $request->validate([
             'no' => 'required|unique:invoices,no',
             'tgl' => 'required|date',
             'jatuh_tempo' => 'required|date',
-            'delivery_note_id' => 'required|exists:delivery_notes,id',
+            'delivery_note_ids' => 'required|array|min:1',
+            'delivery_note_ids.*' => 'exists:delivery_notes,id',
             'details.*.order_detail_id' => 'required|exists:order_details,id',
             'details.*.qty' => 'required|numeric|min:1',
             'details.*.harga' => 'required|numeric|min:0',
         ]);
 
-        $dn = DeliveryNote::with('order.supplier')->findOrFail($request->delivery_note_id);
-        $supplier_id = $dn->order->supplier->id ?? null;
-        $no_so = $dn->order->no ?? null;
+        DB::beginTransaction();
 
-        $dpp = collect($request->details)->sum(fn($item) => $item['qty'] * $item['harga']);
-        $ppn = $dpp * 0.11;
-        $total = $dpp + $ppn;
+        try {
 
-        $invoice = Invoice::create([
-            'no' => $request->no,
-            'no_so' => $no_so,
-            'tgl' => $request->tgl,
-            'jatuh_tempo' => $request->jatuh_tempo,
-            'delivery_note_id' => $dn->id,
-            'customer_id' => null,
-            'supplier_id' => $supplier_id,
-            'dpp' => $dpp,
-            'ppn' => $ppn,
-            'grand_total' => $total,
-            'status' => 'unpaid',
-            'paid' => 0,
-            'type' => Invoice::TYPE_MASUK,
-        ]);
+            $dns = DeliveryNote::with('order.supplier')
+                ->whereIn('id', $request->delivery_note_ids)
+                ->get();
 
-        foreach ($request->details as $item) {
-            $invoice->details()->create([
-                'order_detail_id' => $item['order_detail_id'],
-                'subtotal' => $item['qty'] * $item['harga'],
+            if ($dns->isEmpty()) {
+                throw new \Exception('Delivery Note tidak ditemukan.');
+            }
+
+            $supplier_id = $dns->first()->order->supplier->id ?? null;
+            $no_so = $dns->first()->order->no ?? null;
+
+            foreach ($dns as $dn) {
+                if (($dn->order->supplier->id ?? null) != $supplier_id) {
+                    throw new \Exception('Semua Delivery Note harus dari supplier yang sama.');
+                }
+            }
+
+            $dpp = collect($request->details)
+                ->sum(fn($item) => $item['qty'] * $item['harga']);
+
+            $ppn = $dpp * 0.11;
+            $total = $dpp + $ppn;
+
+            $invoice = Invoice::create([
+                'no' => $request->no,
+                'no_so' => $no_so,
+                'tgl' => $request->tgl,
+                'jatuh_tempo' => $request->jatuh_tempo,
+                'customer_id' => null,
+                'supplier_id' => $supplier_id,
+                'dpp' => $dpp,
+                'ppn' => $ppn,
+                'grand_total' => $total,
+                'status' => 'unpaid',
+                'paid' => 0,
+                'type' => Invoice::TYPE_MASUK,
             ]);
-        }
 
-        return redirect()->route('pembelian.invoice.index')
-            ->with('success', 'Invoice berhasil dibuat.');
+            // pivot
+            $invoice->deliveryNote()->attach($request->delivery_note_ids);
+
+            foreach ($request->details as $item) {
+                $invoice->details()->create([
+                    'order_detail_id' => $item['order_detail_id'],
+                    'qty' => $item['qty'],
+                    'subtotal' => $item['qty'] * $item['harga'],
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('pembelian.invoice.index')
+                ->with('success', 'Invoice berhasil dibuat.');
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return back()
+                ->withErrors($e->getMessage())
+                ->withInput();
+        }
     }
 
     public function storeKeluar(Request $request)
@@ -830,7 +864,8 @@ class InvoiceController extends Controller
         $request->validate([
             'tgl' => 'required|date',
             'jatuh_tempo' => 'required|date',
-            'delivery_note_id' => 'required|exists:delivery_notes,id',
+            'delivery_note_ids' => 'required|array|min:1',
+            'delivery_note_ids.*' => 'exists:delivery_notes,id',
             'details' => 'required|array|min:1',
             'details.*.order_detail_id' => 'required|exists:order_details,id',
             'details.*.qty' => 'required|numeric|min:1',
@@ -841,18 +876,31 @@ class InvoiceController extends Controller
 
         try {
 
-            // Ambil delivery note + customer
-            $dn = DeliveryNote::with('order.customer')
-                ->findOrFail($request->delivery_note_id);
+            // ambil semua DN
+            $dns = DeliveryNote::with('order.customer')
+                ->whereIn('id', $request->delivery_note_ids)
+                ->get();
 
-            $customer_id = $dn->order->customer->id ?? null;
-            $no_so = $dn->order->no ?? null;
+            if ($dns->isEmpty()) {
+                throw new \Exception('Delivery Note tidak ditemukan.');
+            }
+
+            // ambil customer dari DN pertama
+            $customer_id = $dns->first()->order->customer->id ?? null;
+            $no_so = $dns->first()->order->no ?? null;
 
             if (!$customer_id) {
                 throw new \Exception('Customer tidak ditemukan pada Delivery Note.');
             }
 
-            // Hitung DPP dari detail
+            // validasi semua DN customer harus sama
+            foreach ($dns as $dn) {
+                if (($dn->order->customer->id ?? null) != $customer_id) {
+                    throw new \Exception('Semua Delivery Note harus dari customer yang sama.');
+                }
+            }
+
+            // hitung total
             $dpp = collect($request->details)->sum(function ($item) {
                 return $item['qty'] * $item['harga'];
             });
@@ -860,16 +908,14 @@ class InvoiceController extends Controller
             $ppn = $dpp * 0.11;
             $grand_total = $dpp + $ppn;
 
-            // Generate nomor invoice di sini (lebih aman)
             $invoiceNumber = generateDocumentNumber('invoices', 'INV');
 
-            // Simpan invoice
+            // simpan invoice
             $invoice = Invoice::create([
                 'no' => $invoiceNumber,
                 'no_so' => $no_so,
                 'tgl' => $request->tgl,
                 'jatuh_tempo' => $request->jatuh_tempo,
-                'delivery_note_id' => $dn->id,
                 'customer_id' => $customer_id,
                 'supplier_id' => null,
                 'dpp' => $dpp,
@@ -880,17 +926,24 @@ class InvoiceController extends Controller
                 'type' => Invoice::TYPE_KELUAR,
             ]);
 
-            // Simpan detail
+            // attach delivery notes (pivot)
+            $invoice->deliveryNote()->attach($request->delivery_note_ids);
+
+            // simpan detail
             foreach ($request->details as $item) {
 
                 $invoice->details()->create([
                     'order_detail_id' => $item['order_detail_id'],
+                    'qty' => $item['qty'],
                     'subtotal' => $item['qty'] * $item['harga'],
                 ]);
 
             }
 
-            //ongkir
+            // =======================
+            // ONGKIR (tidak berubah)
+            // =======================
+
             if ($request->filled('ongkir_nominal') && $request->ongkir_nominal > 0) {
 
                 $ongkir = InvoiceOngkir::create([
@@ -900,12 +953,7 @@ class InvoiceController extends Controller
                     'keterangan' => $request->ongkir_keterangan,
                 ]);
 
-                // =========================
-                // Catat pengeluaran Kas
-                // =========================
-
                 $saldoTerakhir = Kas::latest('id')->value('saldo') ?? 0;
-
                 $saldoBaru = $saldoTerakhir - $ongkir->nominal;
 
                 Kas::create([
@@ -1071,7 +1119,8 @@ class InvoiceController extends Controller
     public function detailSales($id)
     {
         $invoice = Invoice::with([
-            'deliveryNote.details.orderDetail.barang',
+            'deliveryNote', // kalau masih butuh tampil SJ
+            'details.orderDetail.barang',
             'deliveryNote.order.customer',
             'ongkirs'
         ])->findOrFail($id);
@@ -1081,8 +1130,10 @@ class InvoiceController extends Controller
     public function detailPurchase($id)
     {
         $invoice = Invoice::with([
-            'deliveryNote.details.orderDetail.barang',
-            'deliveryNote.order.customer'
+            'deliveryNote', // kalau masih butuh tampil SJ
+            'details.orderDetail.barang',
+            'deliveryNote.order.customer',
+            'ongkirs'
         ])->findOrFail($id);
 
         return view('pembelian.invoice.detail', compact('invoice'));
@@ -1091,8 +1142,10 @@ class InvoiceController extends Controller
     public function print($id)
     {
         $invoice = Invoice::with([
+            'deliveryNote', // kalau masih butuh tampil SJ
+            'details.orderDetail.barang',
             'deliveryNote.order.customer',
-            'deliveryNote.details.orderDetail.barang'
+            'ongkirs'
         ])->findOrFail($id);
 
         $pdf = Pdf::loadView('penjualan.invoice.print', compact('invoice'));
@@ -1104,8 +1157,10 @@ class InvoiceController extends Controller
     public function printDot($id)
     {
         $invoice = Invoice::with([
+            'deliveryNote', // kalau masih butuh tampil SJ
+            'details.orderDetail.barang',
             'deliveryNote.order.customer',
-            'deliveryNote.details.orderDetail.barang'
+            'ongkirs'
         ])->findOrFail($id);
 
         $pdf = Pdf::loadView('penjualan.invoice.printDot', compact('invoice'));
@@ -1116,6 +1171,7 @@ class InvoiceController extends Controller
     }
     public function printOngkir($id)
     {
+        
         $invoice = Invoice::with([
             'deliveryNote.order.customer',
             'ongkirs'

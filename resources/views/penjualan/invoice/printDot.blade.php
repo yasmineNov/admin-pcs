@@ -67,8 +67,8 @@
 
             <td width="40%">
                 Kepada Yth,<br>
-                <b>{{ $invoice->deliveryNote->order->customer->nama_customer }}</b><br>
-                {{ $invoice->deliveryNote->order->customer->alamat }}
+                <b>{{ $invoice->customer->nama_customer }}</b><br>
+                {{ $invoice->customer->alamat }}
             </td>
 
         </tr>
@@ -92,7 +92,11 @@
                     <tr>
                         <td width="90">No SJ</td>
                         <td width="10">:</td>
-                        <td>{{ $invoice->deliveryNote->no }}</td>
+                        <td>
+                            @foreach($invoice->deliveryNote as $dn)
+                                {{ $dn->no }}@if(!$loop->last)<br>@endif
+                            @endforeach
+                        </td>
                     </tr>
 
                     <tr>
@@ -110,7 +114,7 @@
                     <tr>
                         <td width="90">No PO</td>
                         <td width="10">:</td>
-                        <td>{{ $invoice->deliveryNote->order->no }}</td>
+                        <td>{{ $invoice->no_so }}</td>
                     </tr>
 
                     <tr>
@@ -146,7 +150,7 @@
 
         <tbody>
 
-            @foreach($invoice->deliveryNote->details as $detail)
+            @foreach($invoice->details as $detail)
 
                 @php
                     $harga = $detail->orderDetail->harga ?? 0;
