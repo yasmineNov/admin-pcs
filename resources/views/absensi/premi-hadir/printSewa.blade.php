@@ -106,7 +106,7 @@
 
         <tr>
             <td style="text-align:left;">
-                <b>YULIANTI</b>
+                <b>YULIATI</b>
             </td>
 
             <td style="text-align:right;">

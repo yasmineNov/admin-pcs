@@ -35,13 +35,19 @@
 </head>
 
 <body>
+    @php
+        $firstPremi = $absensi->premiHadirs->first();
+        $isTraining = $firstPremi && $firstPremi->user->role == 'training';
 
+        $judul = $isTraining ? 'GAJI' : 'Premi Hadir';
+        $labelHarian = $isTraining ? 'Gaji/Hari' : 'Premi/Hari';
+    @endphp
     <table class="no-border">
         <tr>
 
             <td width="60%">
                 <b>{{ config('company.nama') }}</b><br><br>
-                Premi Hadir<br>
+                {{ $judul }}<br>
                 Periode : {{$absensi->tanggal_mulai}} s/d {{$absensi->tanggal_akhir}}<br>
             </td>
         </tr>
@@ -56,7 +62,7 @@
             <tr>
                 <th width="5%">No</th>
                 <th>Nama Karyawan</th>
-                <th width="10%">Premi/Hari</th>
+                <th width="10%">{{ $labelHarian }}</th>
                 <th width="5%">Hari</th>
                 <th width="10%">Jumlah</th>
                 <th width="15%">Tanda Tangan</th>
@@ -78,7 +84,7 @@
             <tr>
                 <td colspan="4" class="text-end"><b>TOTAL</b></td>
                 <td colspan="2" class="text-end">
-                    <b>Rp {{ number_format($absensi->premiHadirs->sum('subtotal_sewa')) }}</b>
+                    <b>Rp {{ number_format($absensi->premiHadirs->sum('subtotal_premi')) }}</b>
                 </td>
             </tr>
         </tbody>
@@ -104,7 +110,7 @@
 
         <tr>
             <td style="text-align:left;">
-                <b>YULIANTI</b>
+                <b>YULIATI</b>
             </td>
 
             <td style="text-align:right;">

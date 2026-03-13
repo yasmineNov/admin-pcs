@@ -62,13 +62,13 @@ class AbsensiController extends Controller
         }
 
         // Kalau ada warning, return JSON (buat JS handle)
-        if (!empty($warningUsers)) {
-            return response()->json([
-                'status' => 'warning',
-                'message' => 'Beberapa user memiliki nominal premi/sewa kosong.',
-                'users' => $warningUsers,
-            ]);
-        }
+        // if (!empty($warningUsers) && !$request->has('confirm')) {
+        //     return response()->json([
+        //         'status' => 'warning',
+        //         'message' => 'Beberapa user memiliki nominal premi/sewa kosong.',
+        //         'users' => $warningUsers,
+        //     ]);
+        // }
 
         // Kalau aman, lanjut simpan
         return $this->commitAbsensi($request);
@@ -130,6 +130,11 @@ class AbsensiController extends Controller
                 $grandTotalPremi += $subtotalPremi;
                 $grandTotalSewa += $subtotalSewa;
             }
+            $firstUser = $absensi->premiHadirs()->with('user')->first();
+
+            $isTraining = $firstUser && $firstUser->user->role == 'training';
+
+            $jenisPembayaran = $isTraining ? 'GAJI' : 'Premi Hadir';
 
             // --- PENCATATAN KAS ---
 
@@ -139,11 +144,11 @@ class AbsensiController extends Controller
                 Kas::create([
                     'tanggal' => now(), // atau pakai $request->end_date
                     'no_transaksi' => 'KAS-PRM-' . $absensi->id . '-' . time(),
-                    'keterangan' => "Pembayaran Total Premi Hadir Periode {$request->start_date} - {$request->end_date}",
+                    'keterangan' => "Pembayaran Total {$jenisPembayaran} Periode {$request->start_date} - {$request->end_date}",
                     'debit' => 0,
                     'kredit' => $grandTotalPremi,
                     'saldo' => $saldo1 - $grandTotalPremi,
-                    'jenis' => 'pendanaan',
+                    'jenis' => 'petty_cash',
                 ]);
             }
 
@@ -158,7 +163,7 @@ class AbsensiController extends Controller
                     'debit' => 0,
                     'kredit' => $grandTotalSewa,
                     'saldo' => $saldo2 - $grandTotalSewa,
-                    'jenis' => 'pendanaan',
+                    'jenis' => 'petty_cash',
                 ]);
             }
 
@@ -219,7 +224,7 @@ class AbsensiController extends Controller
     {
         $absensi = Absensi::with([
             'premiHadirs' => function ($q) {
-                $q->where('nominal_sewa_harian', '>', 0)
+                $q->where('nominal_premi_harian', '>', 0)
                     ->with(['user.sewaKendaraan']);
             }
         ])->findOrFail($id);
