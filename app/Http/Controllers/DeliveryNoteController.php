@@ -9,6 +9,7 @@ use App\Models\Orders;
 use App\Models\OrderDetail;
 use App\Models\Barang;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\MutasiBarang;
 
 class DeliveryNoteController extends Controller
 {
@@ -171,14 +172,14 @@ class DeliveryNoteController extends Controller
 
             $orderDetail = OrderDetail::findOrFail($item['order_detail_id']);
 
-            // 🔥 Hitung sisa yang boleh dikirim
-            $sisaQty = $orderDetail->qty - $orderDetail->qty_sent;
+            // // 🔥 Hitung sisa yang boleh dikirim
+            // $sisaQty = $orderDetail->qty - $orderDetail->qty_sent;
 
-            if ($item['qty'] > $sisaQty) {
-                return back()->withErrors([
-                    'qty' => 'Qty kirim melebihi sisa yang belum dikirim'
-                ])->withInput();
-            }
+            // if ($item['qty'] > $sisaQty) {
+            //     return back()->withErrors([
+            //         'qty' => 'Qty kirim melebihi sisa yang belum dikirim'
+            //     ])->withInput();
+            // }
 
             $detail = DeliveryNoteDetail::create([
                 'delivery_note_id' => $deliveryNote->id,
@@ -186,6 +187,15 @@ class DeliveryNoteController extends Controller
                 'qty' => $item['qty'],
                 'keterangan' => $item['keterangan'] ?? null
             ]);
+            // 🔥 Tambah Mutasi Barang
+            MutasiBarang::create([
+                'tgl_mutasi' => $deliveryNote->tgl,
+                'barang_id' => $orderDetail->barang_id,
+                'qty' => $item['qty'],
+                'tipe' => $type == 'masuk' ? 'IN' : 'OUT',
+                'keterangan' => null
+            ]);
+
 
             // 🔥 Update qty_sent
             $orderDetail->qty_sent += $item['qty'];
