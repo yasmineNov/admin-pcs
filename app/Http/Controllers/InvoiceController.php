@@ -908,7 +908,7 @@ class InvoiceController extends Controller
             $ppn = $dpp * 0.11;
             $grand_total = $dpp + $ppn;
 
-            $invoiceNumber = generateDocumentNumber('invoices', 'INV');
+            $invoiceNumber = generateDocumentNumber('invoices', 'PCS-INV', 'out');
 
             // simpan invoice
             $invoice = Invoice::create([

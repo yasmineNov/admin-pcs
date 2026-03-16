@@ -101,7 +101,6 @@
                             name="details[${rowIndex}][qty]" 
                             class="form-control qty-input" 
                             min="1"
-                            max="${detail ? detail.sisa : ''}"
                             value="${detail ? detail.sisa : 1}">
                     </td>
 
