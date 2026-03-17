@@ -4,7 +4,7 @@
 <div class="container">
     <h4>Input Transaksi Kas</h4>
 
-    <form action="{{ route('kas.store') }}" method="POST">
+    <form action="{{ route('petty_cash.kas.store') }}" method="POST">
         @csrf
 
         <div class="mb-3">

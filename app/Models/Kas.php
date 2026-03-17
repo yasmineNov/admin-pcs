@@ -15,7 +15,12 @@ class Kas extends Model
         'debit',
         'kredit',
         'saldo',
-        'jenis'
+        'jenis',
+        'voucher_id'
     ];
+    public function voucher()
+    {
+        return $this->belongsTo(Voucher::class);
+    }
 }
 
