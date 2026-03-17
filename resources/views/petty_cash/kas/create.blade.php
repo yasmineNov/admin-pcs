@@ -14,7 +14,7 @@
 
         <div class="mb-3">
             <label>No Transaksi</label>
-            <input type="text" name="no_transaksi" class="form-control" required>
+            <input type="text" name="no_transaksi" class="form-control">
         </div>
 
         <div class="mb-3">
