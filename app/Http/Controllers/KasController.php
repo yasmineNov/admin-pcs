@@ -44,7 +44,7 @@ class KasController extends Controller
 
         Kas::create([
             'tanggal' => $request->tanggal,
-            'no_transaksi' => $request->no_transaksi,
+            'no_transaksi' => $request->no_transaksi ?: generateTransactionNumber('kas'),
             'keterangan' => $request->keterangan,
             'debit' => $request->debit ?? 0,
             'kredit' => $request->kredit ?? 0,

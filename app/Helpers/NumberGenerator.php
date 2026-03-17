@@ -62,3 +62,20 @@ function generateVoucherNumber($table, $prefix)
 
     return $prefix . $day . $month . $year . $nextNumber;
 }
+
+function generateTransactionNumber($table, $prefix = 'TRX')
+{
+    $last = DB::table($table)
+        ->where('no_transaksi', 'like', $prefix . '%')
+        ->orderBy('id', 'desc')
+        ->value('no_transaksi');
+
+    if ($last) {
+        $lastNumber = intval(substr($last, strlen($prefix)));
+        $nextNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+    } else {
+        $nextNumber = '0001';
+    }
+
+    return $prefix . $nextNumber;
+}
