@@ -4,7 +4,7 @@
 <div class="container">
     <div class="d-flex justify-content-between">
         <h4>Petty Cash & Pengeluaran Kantor</h4>
-        <a href="{{ route('kas.create') }}" class="btn btn-primary mb-3">
+        <a href="{{ route('petty_cash.kas.create') }}" class="btn btn-primary mb-3">
             + Tambah Transaksi
         </a>
     </div>

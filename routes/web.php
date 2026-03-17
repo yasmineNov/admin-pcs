@@ -61,17 +61,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-/*
-|--------------------------------------------------------------------------
-| KAS
-|--------------------------------------------------------------------------
-*/
 
-Route::prefix('kas')->name('kas.')->group(function () {
-    Route::get('/', [KasController::class, 'index'])->name('index');
-    Route::get('/create', [KasController::class, 'create'])->name('create');
-    Route::post('/store', [KasController::class, 'store'])->name('store');
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -282,6 +272,33 @@ Route::get('/premiHadir/{id}/print', [AbsensiController::class, 'printPremi'])
 Route::get('/sewa/{id}/print', [AbsensiController::class, 'printSewa'])
     ->name('sewa.print');
 
+
+/*
+|--------------------------------------------------------------------------
+| KAS
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('petty_cash')->name('petty_cash.')->group(function () {
+
+    Route::get('kas', [KasController::class, 'index'])->name('kas.index');
+    Route::get('kas/create', [KasController::class, 'create'])->name('kas.create');
+    Route::post('kas', [KasController::class, 'store'])->name('kas.store');
+    // Route::get('/', [KasController::class, 'index'])->name('index');
+
+    // Route::post('/store', [KasController::class, 'store'])->name('store');
+
+    Route::get('voucher', [KasController::class, 'indexVoucher'])->name('voucher.index');
+    Route::get('voucher/{id}/detail', [KasController::class, 'detailVoucher'])
+        ->name('voucher.detail');
+    Route::get('voucher/create', [KasController::class, 'createVoucher'])->name('voucher.create');
+    Route::post('voucher', [KasController::class, 'storeVoucher'])->name('voucher.store');
+
+    Route::get('voucher/{id}/print', [KasController::class, 'printVoucher'])
+        ->name('voucher.print');
+});
+
+Route::get('kas/get-by-date', [KasController::class, 'getByDate']);
 
 /*
 |--------------------------------------------------------------------------

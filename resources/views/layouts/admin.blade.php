@@ -248,7 +248,7 @@
 
                         <li class="nav-item has-treeview {{ request()->is('absensi*') ? 'menu-open' : '' }}">
                             <a href="#" class="nav-link {{ request()->is('absensi*') ? 'active' : '' }}">
-                                
+
                                 <p> Manajemen Absensi <i class="right fas fa-angle-left"></i> </p>
                             </a>
 
@@ -284,13 +284,37 @@
                             </ul>
                         </li>
 
+                        <li class="nav-item has-treeview {{ request()->is('petty_cash*') ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ request()->is('petty_cash*') ? 'active' : '' }}">
+
+                                <p> PettyCash <i class="right fas fa-angle-left"></i> </p>
+                            </a>
+
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ route('petty_cash.kas.index') }}"
+                                        class="nav-link {{ request()->is('petty_cash/kas*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-money-bill-wave"></i>
+                                        <p>Kas</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('petty_cash.voucher.index') }}"
+                                        class="nav-link {{ request()->is('petty_cash/voucher*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-receipt"></i>
+                                        <p>Voucher</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
                         <!-- Kas -->
-                        <li class="nav-item {{ request()->is('kas*') ? 'menu-open' : '' }}">
+                        {{-- <li class="nav-item {{ request()->is('kas*') ? 'menu-open' : '' }}">
                             <a href="{{ route('kas.index') }}"
                                 class="nav-link {{ request()->is('kas*') ? 'active' : '' }}">
                                 <p>Kas</p>
                             </a>
-                        </li>
+                        </li> --}}
                         {{-- <li class="nav-item {{ request()->is('absensi*') ? 'menu-open' : '' }}">
                             <a href="{{ route('kas.index') }}"
                                 class="nav-link {{ request()->is('kas*') ? 'active' : '' }}">
@@ -314,7 +338,7 @@
     <script src="{{ asset('adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('adminlte/dist/js/adminlte.min.js') }}"></script>
     {{-- SELECT2 --}}
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     @yield('scripts')
