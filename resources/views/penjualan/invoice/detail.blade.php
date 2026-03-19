@@ -99,8 +99,8 @@
 <hr>
 
 @php
-    $ppn = $subtotal * 0.11;
-    $grandTotal = $subtotal + $ppn;
+    $ppn = $invoice->ppn;
+    $grandTotal = $invoice->grand_total;
 @endphp
 
 <table class="table table-bordered">

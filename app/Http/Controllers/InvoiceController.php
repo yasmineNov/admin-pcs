@@ -788,6 +788,7 @@ class InvoiceController extends Controller
             'details.*.order_detail_id' => 'required|exists:order_details,id',
             'details.*.qty' => 'required|numeric|min:1',
             'details.*.harga' => 'required|numeric|min:0',
+            'ppn_mode' => 'required|in:ppn,non',
         ]);
 
         DB::beginTransaction();
@@ -814,7 +815,14 @@ class InvoiceController extends Controller
             $dpp = collect($request->details)
                 ->sum(fn($item) => $item['qty'] * $item['harga']);
 
-            $ppn = $dpp * 0.11;
+            $mode = $request->ppn_mode;
+
+            $ppn = 0;
+
+            if ($mode === 'ppn') {
+                $ppn = $dpp * 0.11;
+            }
+
             $total = $dpp + $ppn;
 
             $invoice = Invoice::create([
@@ -870,6 +878,7 @@ class InvoiceController extends Controller
             'details.*.order_detail_id' => 'required|exists:order_details,id',
             'details.*.qty' => 'required|numeric|min:1',
             'details.*.harga' => 'required|numeric|min:0',
+            'ppn_mode' => 'required|in:ppn,non',
         ]);
 
         DB::beginTransaction();
@@ -905,8 +914,15 @@ class InvoiceController extends Controller
                 return $item['qty'] * $item['harga'];
             });
 
-            $ppn = $dpp * 0.11;
-            $grand_total = $dpp + $ppn;
+            $mode = $request->ppn_mode;
+
+            $ppn = 0;
+
+            if ($mode === 'ppn') {
+                $ppn = $dpp * 0.11;
+            }
+
+            $total = $dpp + $ppn;
 
             $invoiceNumber = generateDocumentNumber('invoices', 'PCS-INV', 'out');
 
@@ -920,7 +936,7 @@ class InvoiceController extends Controller
                 'supplier_id' => null,
                 'dpp' => $dpp,
                 'ppn' => $ppn,
-                'grand_total' => $grand_total,
+                'grand_total' => $total,
                 'status' => 'unpaid',
                 'paid' => 0,
                 'type' => Invoice::TYPE_KELUAR,
@@ -1171,7 +1187,7 @@ class InvoiceController extends Controller
     }
     public function printOngkir($id)
     {
-        
+
         $invoice = Invoice::with([
             'deliveryNote.order.customer',
             'ongkirs'

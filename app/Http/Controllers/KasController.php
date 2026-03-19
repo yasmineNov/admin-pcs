@@ -12,7 +12,7 @@ class KasController extends Controller
 {
     public function index()
     {
-        $data = Kas::orderBy('tanggal')->orderBy('id')->get();
+        $data = Kas::orderBy('id', 'desc')->get();
         return view('petty_cash.kas.index', compact('data'));
     }
 
