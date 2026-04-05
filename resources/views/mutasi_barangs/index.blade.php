@@ -8,7 +8,7 @@
                 </div>
 
                 <div class="card-body">
-                  <form method="GET">
+                   <form method="GET">
                     <div class="row mb-4">
                          <div class="col-md-6">
                                 <select name="barang_id"

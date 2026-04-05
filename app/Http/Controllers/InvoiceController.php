@@ -155,7 +155,7 @@ class InvoiceController extends Controller
         $totalPpn = $summaryQuery->sum('ppn');
         $grandTotal = $summaryQuery->sum('grand_total');
 
-        $suppliers = \App\Models\Supplier::orderBy('nama_supplier')->get();
+        $suppliers = Supplier::orderBy('nama_supplier')->get();
 
         return view('pembelian.data-pembelian.index', compact(
             'invoices',
@@ -211,7 +211,7 @@ class InvoiceController extends Controller
         $totalPpn = $summaryQuery->sum('ppn');
         $grandTotal = $summaryQuery->sum('grand_total');
 
-        $customers = \App\Models\Customer::orderBy('nama_customer')->get();
+        $customers = Customer::orderBy('nama_customer')->get();
 
         return view('penjualan.data-penjualan.index', compact(
             'invoices',
@@ -757,7 +757,7 @@ class InvoiceController extends Controller
 
     public function createMasuk()
     {
-        $suppliers = \App\Models\Supplier::all();
+        $suppliers = Supplier::all();
         $deliveryNotes = DeliveryNote::where('type', 'masuk')->with('order.supplier')->get();
         $orderDetails = OrderDetail::with('barang')->get();
 
@@ -766,7 +766,7 @@ class InvoiceController extends Controller
 
     public function createKeluar()
     {
-        $customers = \App\Models\Customer::all();
+        $customers = Customer::all();
         $deliveryNotes = DeliveryNote::where('type', 'keluar')->with('order.customer')->get();
         $orderDetails = OrderDetail::with('barang')->get();
 

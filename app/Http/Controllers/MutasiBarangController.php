@@ -81,9 +81,9 @@ class MutasiBarangController extends Controller
     {
         $request->validate([
             'tgl_mutasi' => 'required|date',
-            'barang_id'  => 'required|exists:barangs,id',
-            'qty'        => 'required|integer|min:1',
-            'tipe'       => 'required|in:IN,OUT',
+            'barang_id' => 'required|exists:barangs,id',
+            'qty' => 'required|integer|min:1',
+            'tipe' => 'required|in:IN,OUT',
         ]);
 
         DB::beginTransaction();
@@ -101,9 +101,9 @@ class MutasiBarangController extends Controller
 
             $mutasi = MutasiBarang::create([
                 'tgl_mutasi' => $request->tgl_mutasi,
-                'barang_id'  => $request->barang_id,
-                'qty'        => $request->qty,
-                'tipe'       => $request->tipe,
+                'barang_id' => $request->barang_id,
+                'qty' => $request->qty,
+                'tipe' => $request->tipe,
                 'keterangan' => $request->keterangan ?? null,
             ]);
 
