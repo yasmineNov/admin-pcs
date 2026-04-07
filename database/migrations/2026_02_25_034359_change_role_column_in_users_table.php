@@ -10,10 +10,10 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            // Mengubah enum ke string (varchar)
-            $table->string('role')->change();
-        });
+        // Schema::table('users', function (Blueprint $table) {
+        //     // Mengubah enum ke string (varchar)
+        //     $table->string('role')->change();
+        // });
     }
 
     public function down(): void

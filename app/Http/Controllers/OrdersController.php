@@ -9,6 +9,7 @@ use App\Models\Supplier;
 use App\Models\DeliveryNote;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class OrdersController extends Controller
 {
@@ -100,10 +101,6 @@ class OrdersController extends Controller
                     'qty_sent' => 0,
                 ]);
 
-                // Tambah stok karena PO masuk
-                $barang = \App\Models\Barang::find($barangId);
-                $barang->stok += $request->qty[$i];
-                $barang->save();
             }
 
             DB::commit();

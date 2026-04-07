@@ -8,6 +8,14 @@
 
         <form action="{{ route('penjualan.sales-order.store') }}" method="POST" id="soForm">
             @csrf
+
+            @if ($errors->any())
+    <div style="color:red;">
+        @foreach ($errors->all() as $error)
+            <p>{{ $error }}</p>
+        @endforeach
+    </div>
+@endif
             <div class="card-body">
 
                 <div class="row mb-2">
@@ -39,7 +47,7 @@
                     </div>
                     <div class="col-md-2">
                         <label>Tanggal Kirim</label>
-                        <input type="date" name="tgl" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        <input type="date" name="tgl_kirim" class="form-control" value="{{ date('Y-m-d') }}" required>
                     </div>
                 </div>
 
