@@ -71,7 +71,12 @@
 
         <div class="card mt-4">
             <div class="card-header">
-                <h3 class="card-title">Riwayat Sesi Absensi</h3>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">Riwayat Sesi Absensi</h3>
+                    <button class="btn btn-success btn-sm" id="btnPrint">
+                        <i class="fas fa-print"></i> Print Absensi
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <table class="table table-striped">
@@ -113,6 +118,41 @@
                         </button>
                     </div>
                     <div id="modalBody" class="modal-body">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalPrint" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-success">
+                        <h5 class="modal-title text-white">Print Absensi</h5>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+
+                    <div class="modal-body">
+                        <!-- Pilih bulan -->
+                        <div class="form-group">
+                            <label>Bulan</label>
+                            <input type="month" id="bulan" class="form-control">
+                        </div>
+
+                        <!-- Pilih karyawan -->
+
+                        <div class="form-group">
+                            <label>Karyawan</label>
+                            @foreach($allUsers as $user)
+                                <div>
+                                    <input type="checkbox" class="cb-user-print" value="{{ $user->id }}">
+                                    {{ $user->name }}
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" id="btnDoPrint">Print</button>
                     </div>
                 </div>
             </div>
@@ -190,5 +230,36 @@
                 });
             });
         });
+
+        // buka modal
+        $(document).ready(function () {
+
+            $('#btnPrint').on('click', function () {
+                $('#modalPrint').modal('show');
+            });
+
+            $('#btnDoPrint').on('click', function () {
+                let bulan = $('#bulan').val();
+
+                let users = [];
+                $('.cb-user-print:checked').each(function () {
+                    users.push($(this).val());
+                });
+
+                if (!bulan || users.length === 0) {
+                    alert("Pilih bulan dan minimal 1 karyawan");
+                    return;
+                }
+
+                // Ganti baris ini di JS kamu:
+                let url = "{{ route('absensi.print') }}?bulan=" + bulan + "&users=" + users.join(',');
+
+                window.open(url, '_blank');
+            });
+
+        });
+
+        // action print
+
     </script>
 @endsection

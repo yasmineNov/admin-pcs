@@ -242,6 +242,7 @@ Route::post('/penjualan/piutang/bayar', [InvoiceController::class, 'bayarPiutang
 | ABSESNSI
 |--------------------------------------------------------------------------
 */
+Route::get('/absensi/print', [AbsensiController::class, 'print'])->name('absensi.print');
 
 Route::prefix('absensi')->name('absensi.')->group(function () {
 
@@ -249,6 +250,7 @@ Route::prefix('absensi')->name('absensi.')->group(function () {
     Route::get('absen-karyawan', [AbsensiController::class, 'index'])->name('absen-karyawan.index');
     Route::post('absen-karyawan', [AbsensiController::class, 'store'])->name('absen-karyawan.store');
 
+    //Route untuk print
     // INI YANG KURANG: Route untuk Handle AJAX Detail
     Route::get('absen-karyawan/detail/{id}', [AbsensiController::class, 'getDetail'])->name('absen-karyawan.detail');
 
@@ -267,10 +269,8 @@ Route::prefix('absensi')->name('absensi.')->group(function () {
     );
 });
 
-Route::get('/premiHadir/{id}/print', [AbsensiController::class, 'printPremi'])
-    ->name('premiHadir.print');
-Route::get('/sewa/{id}/print', [AbsensiController::class, 'printSewa'])
-    ->name('sewa.print');
+Route::get('/absensi/premi/{id}/print', [AbsensiController::class, 'printPremi'])->name('absensi.premi.print');
+Route::get('/absensi/sewa/{id}/print', [AbsensiController::class, 'printSewa'])->name('absensi.sewa.print');
 
 
 /*

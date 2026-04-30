@@ -19,18 +19,25 @@ class AbsensiController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Ambil riwayat absensi untuk ditampilkan di tabel utama
         $history = Absensi::orderBy('tanggal_mulai', 'desc')->get();
 
-        // 2. Logic untuk Generate Form Checkbox
         $period = null;
         $users = [];
+
+        // 🔥 TAMBAHAN INI
+        $allUsers = User::orderBy('name')->get();
+
         if ($request->has(['start_date', 'end_date'])) {
             $period = CarbonPeriod::create($request->start_date, $request->end_date);
-            $users = User::all();
+            $users = $allUsers;
         }
 
-        return view('absensi.absen-karyawan.index', compact('history', 'period', 'users'));
+        return view('absensi.absen-karyawan.index', compact(
+            'history',
+            'period',
+            'users',
+            'allUsers' // 🔥 kirim ke blade
+        ));
     }
 
     public function store(Request $request)
@@ -258,5 +265,45 @@ class AbsensiController extends Controller
             '.pdf';
 
         return $pdf->stream($filename);
+    }
+
+    public function print(Request $request)
+    {
+        $bulan = $request->bulan; // format: YYYY-MM
+        $userIds = explode(',', $request->users);
+
+        // 1. Tentukan range tanggal berdasarkan input bulan
+        $start = Carbon::parse($bulan)->startOfMonth();
+        $end = Carbon::parse($bulan)->endOfMonth();
+
+        // 2. Ambil data User
+        $users = User::whereIn('id', $userIds)->get();
+
+        // 3. Ambil data kehadiran dari tabel DETAIL (AbsensiUser)
+        // Asumsi: Tabel absensi_users punya kolom 'tanggal_hadir' atau 'tanggal'
+        // Dan berelasi dengan tabel absensi (header)
+        $data = [];
+
+        foreach ($users as $user) {
+            $absen = AbsensiUser::where('user_id', $user->id)
+                ->whereBetween('tanggal', [$start->format('Y-m-d'), $end->format('Y-m-d')])
+                ->pluck('tanggal') // Pastikan nama kolomnya benar (tanggal atau tanggal_hadir?)
+                ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+                ->toArray();
+
+            $data[] = [
+                'user' => $user,
+                'absen' => $absen
+            ];
+        }
+
+        // 4. Buat list tanggal untuk kolom header di table PDF nanti
+        $period = CarbonPeriod::create($start, $end);
+
+        // 5. Load View (Hapus dd() nya)
+        $pdf = Pdf::loadView('absensi.absen-karyawan.print', compact('data', 'period', 'bulan'))
+              ->setPaper('a4', 'landscape'); // <--- TAMBAHKAN INI
+
+        return $pdf->stream('rekap-absensi-' . $bulan . '.pdf');
     }
 }
