@@ -486,7 +486,7 @@ class InvoiceController extends Controller
 
         return response()->json($data);
     }
-
+    
     public function bayarHutang(Request $request)
     {
         $request->validate([
@@ -494,93 +494,180 @@ class InvoiceController extends Controller
             'jumlah_bayar' => 'required|numeric|min:1',
             'metode' => 'required'
         ]);
-
+    
         DB::beginTransaction();
-
+    
         try {
-
             $supplierId = $request->supplier_id;
-            $sisaUang = (int) $request->jumlah_bayar;
-
-            // Ambil invoice yg masih ada sisa, urut paling lama
-            $invoices = Invoice::with('paymentDetails')
+            $sisaUang = (float) $request->jumlah_bayar; // Pakai float biar presisi pas hitung sisa
+    
+            // 1. Ambil invoice yang belum lunas
+            $invoices = Invoice::with(['paymentDetails', 'ongkirs'])
                 ->where('supplier_id', $supplierId)
                 ->where('type', Invoice::TYPE_MASUK)
+                ->where('status', '!=', 'paid')
                 ->orderBy('tgl', 'asc')
                 ->get();
-
-            // Hitung total sisa hutang
-            $totalSisa = 0;
-
+    
+            // 2. Hitung total sisa hutang real (termasuk ongkir)
+            $totalSisaHutang = 0;
             foreach ($invoices as $inv) {
                 $paid = $inv->paymentDetails->sum('subtotal');
-                $kurang = $inv->grand_total - $paid;
-
-                if ($kurang > 0) {
-                    $totalSisa += $kurang;
-                }
+                $totalTagihan = $inv->grand_total + $inv->ongkirs->sum('nominal');
+                $totalSisaHutang += ($totalTagihan - $paid);
             }
-
-            if ($sisaUang > $totalSisa) {
+    
+            // VALIDASI: Beri toleransi 1 rupiah/unit untuk selisih pembulatan
+            // Hanya throw error kalau beneran kelebihan bayar lebih dari 1
+            if (($sisaUang - $totalSisaHutang) > 1) {
                 throw new \Exception('Jumlah bayar melebihi total hutang.');
             }
-
-            // Buat header payment
+    
+            // 3. Buat header payment
             $payment = Payment::create([
                 'total' => $request->jumlah_bayar,
                 'keterangan' => 'Pelunasan Hutang - ' . $request->metode,
                 'type' => 'out',
                 'supplier_id' => $supplierId,
-                'customer_id' => null,
             ]);
-
-            // ====== FIFO LOGIC ======
+    
+            // 4. ====== FIFO LOGIC WITH TOLERANCE ======
             foreach ($invoices as $invoice) {
-
-                if ($sisaUang <= 0)
-                    break;
-
+                if ($sisaUang <= 0) break;
+    
                 $sudahDibayar = $invoice->paymentDetails->sum('subtotal');
-
                 $totalTagihan = $invoice->grand_total + $invoice->ongkirs->sum('nominal');
-
                 $kurang = $totalTagihan - $sudahDibayar;
-
-                if ($kurang <= 0)
-                    continue;
-
+    
+                if ($kurang <= 0) continue;
+    
+                // Tentukan berapa yang dibayarkan ke invoice ini
                 $bayar = min($sisaUang, $kurang);
-
+    
                 PaymentDetail::create([
                     'payment_id' => $payment->id,
                     'invoice_id' => $invoice->id,
                     'subtotal' => $bayar
                 ]);
-
+    
                 $invoice->paid += $bayar;
-
-                if ($invoice->paid >= $totalTagihan) {
+    
+                // PENGECEKAN STATUS: Toleransi selisih di bawah 1 (koma-komaan)
+                // Kalau sisa hutang di invoice ini kurang dari 1, langsung set lunas
+                if (($totalTagihan - $invoice->paid) < 1) {
                     $invoice->status = 'paid';
+                    $invoice->paid = $totalTagihan; // Force biar angkanya genap lunas di DB
                 } else {
                     $invoice->status = 'partial';
                 }
-
+    
                 $invoice->save();
-
                 $sisaUang -= $bayar;
             }
-
+    
             DB::commit();
-
             return back()->with('success', 'Pembayaran berhasil disimpan.');
-
+    
         } catch (\Exception $e) {
-
             DB::rollBack();
-
             return back()->withErrors($e->getMessage());
         }
     }
+
+    // public function bayarHutang(Request $request)
+    // {
+    //     $request->validate([
+    //         'supplier_id' => 'required|exists:suppliers,id',
+    //         'jumlah_bayar' => 'required|numeric|min:1',
+    //         'metode' => 'required'
+    //     ]);
+
+    //     DB::beginTransaction();
+
+    //     try {
+
+    //         $supplierId = $request->supplier_id;
+    //         $sisaUang = (int) $request->jumlah_bayar;
+
+    //         // Ambil invoice yg masih ada sisa, urut paling lama
+    //         $invoices = Invoice::with('paymentDetails')
+    //             ->where('supplier_id', $supplierId)
+    //             ->where('type', Invoice::TYPE_MASUK)
+    //             ->orderBy('tgl', 'asc')
+    //             ->get();
+
+    //         // Hitung total sisa hutang
+    //         $totalSisa = 0;
+
+    //         foreach ($invoices as $inv) {
+    //             $paid = $inv->paymentDetails->sum('subtotal');
+    //             $kurang = $inv->grand_total - $paid;
+
+    //             if ($kurang > 0) {
+    //                 $totalSisa += $kurang;
+    //             }
+    //         }
+
+    //         if (($sisaUang - $totalSisa) > 1) {
+    //             throw new \Exception('Jumlah bayar melebihi total hutang.');
+    //         }
+
+    //         // Buat header payment
+    //         $payment = Payment::create([
+    //             'total' => $request->jumlah_bayar,
+    //             'keterangan' => 'Pelunasan Hutang - ' . $request->metode,
+    //             'type' => 'out',
+    //             'supplier_id' => $supplierId,
+    //             'customer_id' => null,
+    //         ]);
+
+    //         // ====== FIFO LOGIC ======
+    //         foreach ($invoices as $invoice) {
+
+    //             if ($sisaUang <= 0)
+    //                 break;
+
+    //             $sudahDibayar = $invoice->paymentDetails->sum('subtotal');
+
+    //             $totalTagihan = $invoice->grand_total + $invoice->ongkirs->sum('nominal');
+
+    //             $kurang = $totalTagihan - $sudahDibayar;
+
+    //             if ($kurang <= 0)
+    //                 continue;
+
+    //             $bayar = min($sisaUang, $kurang);
+
+    //             PaymentDetail::create([
+    //                 'payment_id' => $payment->id,
+    //                 'invoice_id' => $invoice->id,
+    //                 'subtotal' => $bayar
+    //             ]);
+
+    //             $invoice->paid += $bayar;
+
+    //             if ($invoice->paid >= $totalTagihan) {
+    //                 $invoice->status = 'paid';
+    //             } else {
+    //                 $invoice->status = 'partial';
+    //             }
+
+    //             $invoice->save();
+
+    //             $sisaUang -= $bayar;
+    //         }
+
+    //         DB::commit();
+
+    //         return back()->with('success', 'Pembayaran berhasil disimpan.');
+
+    //     } catch (\Exception $e) {
+
+    //         DB::rollBack();
+
+    //         return back()->withErrors($e->getMessage());
+    //     }
+    // }
 
     // ===========================
     // LAPORAN PIUTANG
@@ -969,18 +1056,18 @@ class InvoiceController extends Controller
                     'keterangan' => $request->ongkir_keterangan,
                 ]);
 
-                $saldoTerakhir = Kas::latest('id')->value('saldo') ?? 0;
-                $saldoBaru = $saldoTerakhir - $ongkir->nominal;
+                // $saldoTerakhir = Kas::latest('id')->value('saldo') ?? 0;
+                // $saldoBaru = $saldoTerakhir - $ongkir->nominal;
 
-                Kas::create([
-                    'tanggal' => $request->tgl,
-                    'no_transaksi' => $ongkir->no,
-                    'keterangan' => 'Ongkir ke customer dengan no ongkir ' . $ongkir->no,
-                    'debit' => 0,
-                    'kredit' => $ongkir->nominal,
-                    'saldo' => $saldoBaru,
-                    'jenis' => 'pendanaan',
-                ]);
+                // Kas::create([
+                //     'tanggal' => $request->tgl,
+                //     'no_transaksi' => $ongkir->no,
+                //     'keterangan' => 'Ongkir ke customer dengan no ongkir ' . $ongkir->no,
+                //     'debit' => 0,
+                //     'kredit' => $ongkir->nominal,
+                //     'saldo' => $saldoBaru,
+                //     'jenis' => 'pendanaan',
+                // ]);
             }
 
             DB::commit();

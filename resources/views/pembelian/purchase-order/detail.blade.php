@@ -18,15 +18,15 @@
         </tr>
         <tr>
             <th>DPP</th>
-            <td>{{ number_format($po->dpp, 0, ',', '.') }}</td>
+            <td>{{ number_format($po->dpp, 2, ',', '.') }}</td>
         </tr>
         <tr>
             <th>Pajak</th>
-            <td>{{ number_format($po->pajak, 0, ',', '.') }}</td>
+            <td>{{ number_format($po->pajak, 2, ',', '.') }}</td>
         </tr>
         <tr>
             <th>Total</th>
-            <td><strong>{{ number_format($po->total, 0, ',', '.') }}</strong></td>
+            <td><strong>{{ number_format($po->total, 2, ',', '.') }}</strong></td>
         </tr>
         <tr>
             <th>Keterangan</th>
@@ -53,8 +53,8 @@
         <tr>
             <td>{{ $detail->barang->nama_barang }}</td>
             <td>{{ $detail->qty }}</td>
-            <td>{{ number_format($detail->harga,0,',','.') }}</td>
-            <td>{{ number_format($detail->subtotal,0,',','.') }}</td>
+            <td>{{ number_format($detail->harga,2,',','.') }}</td>
+            <td>{{ number_format($detail->subtotal,2,',','.') }}</td>
         </tr>
         @endforeach
     </tbody>

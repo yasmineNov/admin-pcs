@@ -24,7 +24,7 @@ class AbsensiController extends Controller
         $period = null;
         $users = [];
 
-        // 🔥 TAMBAHAN INI
+        
         $allUsers = User::orderBy('name')->get();
 
         if ($request->has(['start_date', 'end_date'])) {
@@ -36,7 +36,7 @@ class AbsensiController extends Controller
             'history',
             'period',
             'users',
-            'allUsers' // 🔥 kirim ke blade
+            'allUsers' 
         ));
     }
 
@@ -266,7 +266,7 @@ class AbsensiController extends Controller
 
         return $pdf->stream($filename);
     }
-
+    
     public function print(Request $request)
     {
         $bulan = $request->bulan; // format: YYYY-MM

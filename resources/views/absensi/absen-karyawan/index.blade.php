@@ -122,7 +122,7 @@
                 </div>
             </div>
         </div>
-
+        
         <div class="modal fade" id="modalPrint" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -157,6 +157,7 @@
                 </div>
             </div>
         </div>
+        
     </div>
 @endsection
 
@@ -230,8 +231,7 @@
                 });
             });
         });
-
-        // buka modal
+        
         $(document).ready(function () {
 
             $('#btnPrint').on('click', function () {
@@ -258,8 +258,5 @@
             });
 
         });
-
-        // action print
-
     </script>
 @endsection

@@ -65,7 +65,7 @@
                         <td width="80">TANGGAL</td>
                         <td width="10">:</td>
                         <td>
-                            {{ \Carbon\Carbon::parse($voucher->tgl_akhir)->translatedFormat('d F Y') }}
+                            {{ \Carbon\Carbon::parse($voucher->created_at)->translatedFormat('d F Y') }}
                         </td>
                     </tr>
                 </table>

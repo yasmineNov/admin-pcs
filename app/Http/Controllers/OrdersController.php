@@ -220,10 +220,7 @@ class OrdersController extends Controller
                     'qty_sent' => 0,
                 ]);
 
-                // Tambah stok karena PO masuk
-                $barang = \App\Models\Barang::find($barangId);
-                $barang->stok += $request->qty[$i];
-                $barang->save();
+                
             }
 
             DB::commit();

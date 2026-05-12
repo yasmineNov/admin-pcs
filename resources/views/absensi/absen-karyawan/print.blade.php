@@ -121,11 +121,13 @@
         <table style="width: 100%">
             <tr>
                 <td style="text-align: left">
-                    Dibuat oleh,<br><br><br><br>
+                    Dibuat oleh,<br>
+                    Yuliati<br><br><br><br>
                     (...........................)
                 </td>
                 <td style="text-align: right">
-                    Mengetahui,<br><br><br><br>
+                    Mengetahui,<br>
+                    Tri Tjahyono<br><br><br><br>
                     (...........................)
                 </td>
             </tr>
